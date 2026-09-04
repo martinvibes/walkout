@@ -27,6 +27,7 @@ CREATE TABLE walkout.playback_events
     is_first_time   UInt8,
     subtitle_lang   LowCardinality(String),   -- '' = no subtitles active
     audio_lang      LowCardinality(String),
+    locale_lang     LowCardinality(String),   -- the viewer's device locale
 
     -- quality-of-experience dimensions (the technical-vs-story tiebreaker)
     bitrate_kbps    UInt32,

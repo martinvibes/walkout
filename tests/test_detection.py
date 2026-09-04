@@ -177,3 +177,26 @@ DROP TABLE IF EXISTS walkout.playback_events;
         from walkout.clickhouse import split_statements
 
         assert split_statements("SELECT 1;\n-- trailing note\n") == ["SELECT 1"]
+
+
+class TestSegmentDimensions:
+    """The dimension allow-list is the only place model output touches SQL
+    text, so it has to be a lookup into a fixed set and nothing else."""
+
+    def test_known_dimension_resolves_to_an_expression(self):
+        from walkout.clickhouse import check_dimension
+
+        assert check_dimension("device") == "device"
+        assert "locale_lang" in check_dimension("subtitle_gap")
+
+    def test_unknown_dimension_is_rejected_with_the_valid_options(self):
+        from walkout.clickhouse import UnknownDimension, check_dimension
+
+        with pytest.raises(UnknownDimension) as exc:
+            check_dimension("device; DROP TABLE walkout.playback_events")
+        assert "device" in str(exc.value)
+
+    def test_every_allow_listed_dimension_has_an_expression(self):
+        from walkout.clickhouse import SEGMENT_DIMENSIONS, check_dimension
+
+        assert all(check_dimension(d) for d in SEGMENT_DIMENSIONS)

@@ -21,18 +21,38 @@ from clickhouse_connect.driver.client import Client
 from . import queries
 from .config import SQL_DIR, ClickHouseConfig, clickhouse as clickhouse_config
 
-# Column identifiers the agent is allowed to segment by. ClickHouse binds
-# {dim:Identifier} safely, but an allow-list keeps a typo from becoming a
-# confusing runtime error three tool calls deep.
-SEGMENT_DIMENSIONS = (
-    "device",
-    "platform",
-    "region",
-    "app_version",
-    "subtitle_lang",
-    "cdn_pop",
-    "is_first_time",
-)
+# The dimensions the agent may slice a cliff by, mapped to the SQL that
+# produces them. Most are plain columns; `subtitle_gap` is derived, because the
+# raw subtitle_lang column cannot express the thing that actually matters.
+#
+# Segmenting on subtitle_lang alone is useless: '' covers both an English
+# viewer watching English audio (who needs nothing) and a Hindi viewer who was
+# never offered a subtitle track (who is about to leave). Around 70% of the
+# audience lands in one bucket and the signal disappears. What matters is the
+# *gap* -- a viewer whose locale does not match the audio and who has no
+# subtitles running.
+#
+# Values here are ours, never the model's: the agent picks a key from this
+# fixed set and the expression is looked up, so no model output ever reaches
+# the SQL text. Every other parameter is bound by ClickHouse as usual.
+SEGMENT_EXPRESSIONS = {
+    "device": "device",
+    "platform": "platform",
+    "region": "region",
+    "app_version": "app_version",
+    "cdn_pop": "cdn_pop",
+    "subtitle_lang": "subtitle_lang",
+    "locale_lang": "locale_lang",
+    "is_first_time": "toString(is_first_time)",
+    "subtitle_gap": (
+        "if(locale_lang != audio_lang AND subtitle_lang = '', "
+        "'no subtitles in a foreign-language locale', 'subtitled or native')"
+    ),
+}
+
+SEGMENT_DIMENSIONS = tuple(SEGMENT_EXPRESSIONS)
+
+DIM_SLOT = "$DIM$"
 
 
 class UnknownDimension(ValueError):
@@ -51,16 +71,30 @@ def connect(config: ClickHouseConfig | None = None) -> Client:
 
 
 def check_dimension(dim: str) -> str:
-    if dim not in SEGMENT_DIMENSIONS:
+    """Resolve an allow-listed dimension name to its SQL expression."""
+    try:
+        return SEGMENT_EXPRESSIONS[dim]
+    except KeyError:
         raise UnknownDimension(
             f"{dim!r} is not a segmentable dimension. choose one of: {', '.join(SEGMENT_DIMENSIONS)}"
-        )
-    return dim
+        ) from None
 
 
 def run_named(client: Client, name: str, params: dict[str, Any]) -> list[dict[str, Any]]:
-    """Run one of sql/queries/*.sql and return rows as dicts."""
-    result = client.query(queries.load(name), parameters=params)
+    """Run one of sql/queries/*.sql and return rows as dicts.
+
+    A `dim` parameter is resolved through the allow-list and substituted into
+    the statement, since a dimension can be a derived expression rather than a
+    bindable identifier. Everything else is bound by the driver.
+    """
+    sql = queries.load(name)
+    params = dict(params)
+    dim = params.pop("dim", None)
+    if DIM_SLOT in sql:
+        if dim is None:
+            raise ValueError(f"query {name!r} needs a `dim` parameter")
+        sql = sql.replace(DIM_SLOT, check_dimension(dim))
+    result = client.query(sql, parameters=params)
     return [dict(zip(result.column_names, row)) for row in result.result_rows]
 
 

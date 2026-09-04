@@ -7,8 +7,8 @@
     "license": "CC-BY 3.0"
   },
   "bucket_sec": 10,
-  "sessions": 5000,
-  "events": 272889,
+  "sessions": 250000,
+  "events": 13577907,
   "seed": 7,
   "cliffs": [
     {

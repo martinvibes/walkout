@@ -4,7 +4,7 @@
 -- If rebuffering / bitrate collapsed, do NOT recut the scene -- fix delivery.
 -- ---------------------------------------------------------------------------
 SELECT
-    {dim:Identifier}                                              AS cohort,
+    $DIM$                                              AS cohort,
     count()                                                       AS events,
     round(avg(rebuffer_ms), 1)                                    AS avg_rebuffer_ms,
     round(sum(rebuffer_ms) / (count() * {bucket_sec:UInt32} * 1000.0), 5) AS rebuffer_ratio,

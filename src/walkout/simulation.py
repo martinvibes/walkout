@@ -100,6 +100,7 @@ def build_chunk(rng: np.random.Generator, n: int, steps: int, t0: datetime):
     has_subs = needs_subs & (rng.random(n) < 0.45)
     sub_lang = np.where(has_subs, np.array([REGION_LANG[r] for r in REGIONS])[region], "")
 
+    locale = np.array([REGION_LANG[r] for r in REGIONS])[region]
     pop = np.array([rng.choice(REGION_POP[r]) for r in reg_names])
 
     # --- hazard matrix ------------------------------------------------------
@@ -179,7 +180,8 @@ def build_chunk(rng: np.random.Generator, n: int, steps: int, t0: datetime):
         "event_type": etype, "device": dev_names[sidx], "platform": row_plat,
         "region": reg_names[sidx], "app_version": ver_names[sidx],
         "is_first_time": first_time[sidx], "subtitle_lang": sub_lang[sidx],
-        "audio_lang": np.full(total, "en"), "bitrate_kbps": bitrate,
+        "audio_lang": np.full(total, "en"), "locale_lang": locale[sidx],
+        "bitrate_kbps": bitrate,
         "rebuffer_ms": rebuffer, "startup_ms": startup, "dropped_frames": dropped,
         "cdn_pop": pop[sidx],
     }
@@ -187,7 +189,7 @@ def build_chunk(rng: np.random.Generator, n: int, steps: int, t0: datetime):
 
 COLUMNS = ["event_time", "session_id", "viewer_id", "title_id", "position_sec",
            "event_type", "device", "platform", "region", "app_version",
-           "is_first_time", "subtitle_lang", "audio_lang", "bitrate_kbps",
+           "is_first_time", "subtitle_lang", "audio_lang", "locale_lang", "bitrate_kbps",
            "rebuffer_ms", "startup_ms", "dropped_frames", "cdn_pop"]
 
 

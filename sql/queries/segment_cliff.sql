@@ -10,7 +10,7 @@ WITH
             session_id,
             max(position_sec)                       AS last_pos,
             max(event_type = 'complete')            AS completed,
-            any({dim:Identifier})                   AS cohort
+            any($DIM$)                   AS cohort
         FROM walkout.playback_events
         WHERE title_id = {title_id:String}
         GROUP BY session_id
