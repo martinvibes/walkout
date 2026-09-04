@@ -1,0 +1,16 @@
+# Google Cloud only. The hackathon rules forbid any non-Google AI model,
+# agent framework, or AI API -- that includes LangChain/LangGraph/CrewAI.
+google-adk>=1.0.0
+google-cloud-aiplatform[agent_engines,adk]>=1.101.0
+google-genai>=1.0.0
+google-cloud-storage>=2.18.0
+
+# ClickHouse partner integration
+mcp-clickhouse>=0.1.10
+clickhouse-connect>=0.8.0
+
+# app + data generation
+fastapi>=0.115.0
+uvicorn[standard]>=0.30.0
+numpy>=2.0.0
+python-dotenv>=1.0.0
