@@ -151,3 +151,29 @@ def test_timecode_is_what_an_editor_can_type():
     assert timecode(0) == "00:00:00"
     assert timecode(248) == "00:04:08"
     assert timecode(3661) == "01:01:01"
+
+
+class TestSplitStatements:
+    """A documented statement must still run. This is a regression test: the
+    first version dropped any statement whose leading lines were comments,
+    which quietly skipped CREATE DATABASE and made every later statement fail."""
+
+    def test_leading_comments_are_stripped_not_used_to_skip(self):
+        from walkout.clickhouse import split_statements
+
+        sql = """-- Walkout: playback telemetry schema
+-- One row per player heartbeat.
+
+CREATE DATABASE IF NOT EXISTS walkout;
+
+DROP TABLE IF EXISTS walkout.playback_events;
+"""
+        statements = split_statements(sql)
+        assert len(statements) == 2
+        assert statements[0].startswith("CREATE DATABASE")
+        assert statements[1].startswith("DROP TABLE")
+
+    def test_comment_only_trailing_chunk_is_dropped(self):
+        from walkout.clickhouse import split_statements
+
+        assert split_statements("SELECT 1;\n-- trailing note\n") == ["SELECT 1"]

@@ -163,10 +163,12 @@ def build_chunk(rng: np.random.Generator, n: int, steps: int, t0: datetime):
              np.where(is_last, np.where(completed[sidx], "complete", "exit"),
               np.where(rebuffer > 900, "rebuffer", "heartbeat")))
 
-    # sessions start at random points across a week of traffic
+    # Sessions start at random points across a week of traffic.
+    # DateTime64(3) reads a bare integer as *milliseconds*, so emit ms --
+    # passing seconds here silently lands every event in January 1970.
     sess_offset = rng.integers(0, 7 * 24 * 3600, n)
     epoch = int(t0.timestamp())
-    ts = epoch + sess_offset[sidx] + position.astype(np.int64)
+    ts = (epoch + sess_offset[sidx] + position.astype(np.int64)) * 1000
 
     sess_ids = np.array([f"s{i:012x}" for i in rng.integers(0, 2**44, n)])
     view_ids = np.array([f"v{i:010x}" for i in rng.integers(0, 2**38, n)])

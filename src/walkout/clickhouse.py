@@ -64,13 +64,27 @@ def run_named(client: Client, name: str, params: dict[str, Any]) -> list[dict[st
     return [dict(zip(result.column_names, row)) for row in result.result_rows]
 
 
+def split_statements(sql: str) -> list[str]:
+    """Split a script into executable statements, dropping comment-only ones.
+
+    The driver takes one statement per call. Leading `--` lines have to be
+    stripped rather than used to skip the statement, or a documented statement
+    silently never runs -- which is exactly how CREATE DATABASE went missing.
+    """
+    statements = []
+    for chunk in sql.split(";"):
+        body = "\n".join(
+            line for line in chunk.splitlines() if not line.strip().startswith("--")
+        ).strip()
+        if body:
+            statements.append(body)
+    return statements
+
+
 def apply_schema(client: Client) -> None:
-    """Create the database and tables. Split on ';' because the driver takes
-    one statement per call."""
-    sql = (SQL_DIR / "schema.sql").read_text()
-    for statement in (s.strip() for s in sql.split(";")):
-        if statement and not statement.startswith("--"):
-            client.command(statement)
+    """Create the database and tables."""
+    for statement in split_statements((SQL_DIR / "schema.sql").read_text()):
+        client.command(statement)
 
 
 def insert_columns(client: Client, table: str, cols: dict[str, Any], names: Sequence[str]) -> int:
