@@ -14,21 +14,21 @@ below the detection floor and must NOT be reported:
   C  localization   90-120s   non-English regions with no subtitle track
   D  decoy         620-640s   mild, universal, statistically insignificant
 
-Usage:
-    python scripts/simulate.py --sessions 250000 --out data/
-    python scripts/simulate.py --sessions 250000 --clickhouse
+Driven by `walkout.cli`; see `make simulate`.
 """
 
 from __future__ import annotations
 
-import argparse
 import gzip
 import json
 import os
-import sys
 from datetime import datetime, timedelta, timezone
+from pathlib import Path
+from typing import Any, Callable, Iterator
 
 import numpy as np
+
+from .config import DATA_DIR
 
 # --- title under analysis ---------------------------------------------------
 # Sintel: Blender Foundation open movie, CC-BY 3.0. Safe to ship in a public
@@ -189,73 +189,51 @@ COLUMNS = ["event_time", "session_id", "viewer_id", "title_id", "position_sec",
            "rebuffer_ms", "startup_ms", "dropped_frames", "cdn_pop"]
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--sessions", type=int, default=250_000)
-    ap.add_argument("--chunk", type=int, default=25_000)
-    ap.add_argument("--seed", type=int, default=7)
-    ap.add_argument("--out", default=None, help="directory for gzipped CSV chunks")
-    ap.add_argument("--clickhouse", action="store_true", help="insert straight into ClickHouse")
-    args = ap.parse_args()
+def generate(
+    sessions: int = 250_000,
+    chunk: int = 25_000,
+    seed: int = 7,
+    on_chunk: Callable[[dict[str, np.ndarray]], None] | None = None,
+) -> dict[str, Any]:
+    """Simulate `sessions` viewings, handing each chunk to `on_chunk`.
 
-    if not args.out and not args.clickhouse:
-        ap.error("pick --out DIR or --clickhouse")
-
-    rng = np.random.default_rng(args.seed)
+    Chunked so a run of any size stays inside a fixed memory budget -- 250k
+    sessions is roughly 14M events, which is not something to hold in a list.
+    """
+    rng = np.random.default_rng(seed)
     steps = TITLE["duration_sec"] // BUCKET_SEC + 1
     t0 = datetime.now(timezone.utc) - timedelta(days=7)
 
-    client = None
-    if args.clickhouse:
-        import clickhouse_connect
-        client = clickhouse_connect.get_client(
-            host=os.environ["CLICKHOUSE_HOST"],
-            port=int(os.environ.get("CLICKHOUSE_PORT", 8443)),
-            username=os.environ.get("CLICKHOUSE_USER", "default"),
-            password=os.environ["CLICKHOUSE_PASSWORD"],
-            secure=os.environ.get("CLICKHOUSE_SECURE", "true").lower() == "true",
-        )
-        client.command("TRUNCATE TABLE IF EXISTS walkout.playback_events")
-        client.insert("walkout.titles", [list(TITLE.values())], column_names=list(TITLE.keys()))
-
-    if args.out:
-        os.makedirs(args.out, exist_ok=True)
-
-    written = 0
+    events = 0
     done = 0
-    part = 0
-    while done < args.sessions:
-        n = min(args.chunk, args.sessions - done)
+    while done < sessions:
+        n = min(chunk, sessions - done)
         cols = build_chunk(rng, n, steps, t0)
-        rows = len(cols["position_sec"])
-
-        if client:
-            client.insert(
-                "walkout.playback_events",
-                list(zip(*[cols[c].tolist() for c in COLUMNS])),
-                column_names=COLUMNS,
-            )
-        if args.out:
-            path = os.path.join(args.out, f"playback_events.{part:04d}.csv.gz")
-            with gzip.open(path, "wt", newline="") as fh:
-                arrs = [cols[c] for c in COLUMNS]
-                for r in range(rows):
-                    fh.write(",".join(str(a[r]) for a in arrs) + "\n")
-
-        written += rows
+        if on_chunk is not None:
+            on_chunk(cols)
+        events += len(cols["position_sec"])
         done += n
-        part += 1
-        print(f"  {done:>9,} sessions  {written:>12,} events", flush=True)
+        print(f"  {done:>9,} sessions  {events:>12,} events", flush=True)
 
-    truth = {"title": TITLE, "bucket_sec": BUCKET_SEC, "sessions": args.sessions,
-             "events": written, "seed": args.seed, "cliffs": CLIFFS}
-    with open("data/ground_truth.json", "w") as fh:
-        json.dump(truth, fh, indent=2)
+    truth = {
+        "title": TITLE,
+        "bucket_sec": BUCKET_SEC,
+        "sessions": sessions,
+        "events": events,
+        "seed": seed,
+        "cliffs": CLIFFS,
+    }
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    (DATA_DIR / "ground_truth.json").write_text(json.dumps(truth, indent=2))
+    return truth
 
-    print(f"\n{written:,} events across {args.sessions:,} sessions")
-    print("ground truth -> data/ground_truth.json")
-    return 0
 
-
-if __name__ == "__main__":
-    sys.exit(main())
+def write_csv_chunk(out_dir: Path, part: int, cols: dict[str, np.ndarray]) -> Path:
+    """Gzipped CSV, one file per chunk, in COLUMNS order."""
+    out_dir.mkdir(parents=True, exist_ok=True)
+    path = out_dir / f"playback_events.{part:04d}.csv.gz"
+    arrays = [cols[c] for c in COLUMNS]
+    with gzip.open(path, "wt", newline="") as fh:
+        for row in range(len(cols["position_sec"])):
+            fh.write(",".join(str(a[row]) for a in arrays) + "\n")
+    return path

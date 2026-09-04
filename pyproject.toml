@@ -1,0 +1,43 @@
+[project]
+name = "walkout"
+version = "0.1.0"
+description = "Finds where viewers abandon a title, then works out why"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+
+# Google Cloud only. The hackathon rules forbid any non-Google AI model, agent
+# framework, or AI API -- that includes LangChain, LangGraph and CrewAI.
+dependencies = [
+    "google-adk>=1.0.0",
+    "google-genai>=1.0.0",
+    "google-cloud-storage>=2.18.0",
+    "clickhouse-connect>=0.8.0",
+    "fastapi>=0.115.0",
+    "uvicorn[standard]>=0.30.0",
+    "numpy>=2.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+# mcp-clickhouse is the partner integration proper; pinned separately so the
+# simulator and unit tests can run without it.
+mcp = ["mcp-clickhouse>=0.1.10"]
+dev = ["pytest>=8.0.0"]
+
+[project.scripts]
+walkout-simulate = "walkout.cli:simulate"
+walkout-load = "walkout.cli:load"
+walkout-doctor = "walkout.cli:doctor"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+walkout = ["../../sql/**/*.sql"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

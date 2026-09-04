@@ -78,12 +78,30 @@ The title under analysis is *Sintel* (Blender Foundation, CC-BY 3.0).
 ## Run it
 
 ```bash
-python -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env          # fill in ClickHouse + Google Cloud
+make install                  # venv + editable install
+cp .env.example .env          # then paste in your ClickHouse + Google Cloud settings
 
-clickhouse-client < sql/01_schema.sql            # or paste into ClickHouse Cloud
-python scripts/simulate.py --sessions 250000 --clickhouse
+make doctor                   # verifies the connection before anything long runs
+make load                     # applies sql/schema.sql
+make simulate                 # ~14M events across 250k sessions
+make test                     # unit tests, no cluster required
+```
+
+## Layout
+
+```
+src/walkout/
+  config.py       settings and credentials, resolved once
+  models.py       Cliff, CohortSignal, Diagnosis, Cause -- the shared vocabulary
+  queries.py      loads sql/queries/*.sql by name
+  clickhouse.py   client, named-query runner, segment allow-list
+  detection.py    pure logic: merging flagged buckets, cohort concentration
+  simulation.py   telemetry generator with planted ground truth
+  cli.py          entry points behind the Makefile
+sql/
+  schema.sql      tables
+  queries/        one parameter-bound statement per file, reviewable on its own
+tests/            detection logic, no cluster required
 ```
 
 ## Status
