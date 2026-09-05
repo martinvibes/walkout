@@ -1,0 +1,13 @@
+.git
+.venv
+.venv-mcp
+.env
+.env.*
+!.env.example
+data/*.csv.gz
+data/*.parquet
+data/scene_readings
+__pycache__
+*.pyc
+.pytest_cache
+tests
