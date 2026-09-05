@@ -138,7 +138,7 @@ make mcp-server               # the ClickHouse MCP server, in its own venv
 cp .env.example .env          # then paste in your ClickHouse + Gemini settings
 
 make doctor                   # verifies the connection before anything long runs
-make load                     # applies sql/schema.sql
+make load                     # applies sql/schema.sql -- safe to repeat, keeps data
 make simulate                 # 13.1M events across 250k sessions (~4 min)
 ```
 
@@ -235,6 +235,13 @@ docker run --rm --env-file .env -p 8080:8000 walkout
 
 `railway.json` points the platform's health check at `/api/health`, which
 actually queries ClickHouse rather than just proving the process is alive.
+
+`make load` is safe to run on a deploy: every statement in the schema is
+`CREATE ... IF NOT EXISTS`, so it brings a fresh cluster up and leaves a
+populated one alone. Rebuilding the tables after a schema change is
+`make reload`, which drops them and prints the row count first. That separation
+exists because it was missing once, and applying the schema quietly deleted
+thirteen million rows.
 
 ## Status
 
