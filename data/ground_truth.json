@@ -3,19 +3,20 @@
     "title_id": "sintel",
     "title_name": "Sintel (Blender Foundation, 2010)",
     "duration_sec": 888,
-    "video_uri": "https://download.blender.org/durian/movies/Sintel.2010.720p.mkv",
+    "video_uri": "https://www.youtube.com/watch?v=eRsGyueVLvQ",
+    "credits_start_sec": 746,
     "license": "CC-BY 3.0"
   },
   "bucket_sec": 10,
   "sessions": 250000,
-  "events": 13577907,
+  "events": 0,
   "seed": 7,
   "cliffs": [
     {
       "id": "A",
       "cause": "story",
-      "start": 240,
-      "end": 270,
+      "start": 220,
+      "end": 250,
       "mult": 3.1
     },
     {
@@ -28,8 +29,8 @@
     {
       "id": "C",
       "cause": "localization",
-      "start": 90,
-      "end": 120,
+      "start": 125,
+      "end": 155,
       "mult": 4.0
     },
     {

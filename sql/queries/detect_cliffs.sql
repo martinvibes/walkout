@@ -1,6 +1,10 @@
 -- ---------------------------------------------------------------------------
 -- Statistically significant abandonment cliffs.
--- Baseline is the *median* post-warmup hazard (robust to the cliffs themselves).
+-- Baseline is the *median* post-warmup hazard (robust to the cliffs themselves),
+-- measured over the feature only: the credits are excluded at both the baseline
+-- and the reporting stage, because an audience leaving as the credits roll has
+-- finished the film, not abandoned it. Reporting that would be noise dressed up
+-- as the largest finding in the title.
 -- Significance is a binomial z-test: given `reached` viewers and the baseline
 -- exit probability, how surprising is the observed number of exits?
 -- Both a lift floor and a z floor must clear, so ordinary noise never gets
@@ -37,6 +41,7 @@ WITH
         SELECT quantileExact(0.5)(hazard) AS h0
         FROM curve
         WHERE position_sec >= {warmup_sec:UInt32}   -- the opening drop-off is normal, not a defect
+          AND position_sec <  {credits_sec:UInt32}
     )
 SELECT
     position_sec,
@@ -54,6 +59,7 @@ SELECT
     toUInt32(greatest(exits - reached * (SELECT h0 FROM baseline), 0)) AS excess_exits
 FROM curve
 WHERE position_sec >= {warmup_sec:UInt32}
+  AND position_sec <  {credits_sec:UInt32}
   AND hazard / (SELECT h0 FROM baseline) >= {min_lift:Float64}
   AND (exits - reached * (SELECT h0 FROM baseline))
       / sqrt(reached * (SELECT h0 FROM baseline)

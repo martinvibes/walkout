@@ -79,6 +79,7 @@ class Investigation:
 def find_cliffs(
     client: Client,
     title_id: str,
+    credits_sec: int | None = None,
     bucket_sec: int = 10,
     warmup_sec: int = 60,
     min_lift: float = 1.6,
@@ -86,12 +87,20 @@ def find_cliffs(
     min_exits: int = 150,
     max_gap_sec: int = 10,
 ) -> list[Cliff]:
-    """Significant abandonment cliffs for a title, worst first."""
+    """Significant abandonment cliffs for a title, worst first.
+
+    `credits_sec` is looked up from the titles table when not given. Detection
+    stops there: an audience leaving as the credits roll has finished the film,
+    and reporting that would bury three real findings under one meaningless one.
+    """
+    if credits_sec is None:
+        credits_sec = title_credits_start(client, title_id)
     rows = run_named(
         client,
         "detect_cliffs",
         dict(
             title_id=title_id,
+            credits_sec=credits_sec,
             bucket_sec=bucket_sec,
             warmup_sec=warmup_sec,
             min_lift=min_lift,
@@ -100,6 +109,15 @@ def find_cliffs(
         ),
     )
     return merge_cliffs(rows, bucket_sec=bucket_sec, max_gap_sec=max_gap_sec)
+
+
+def title_credits_start(client: Client, title_id: str) -> int:
+    """Where the end credits begin, or the full runtime if unknown."""
+    rows = run_named(client, "title", dict(title_id=title_id))
+    if not rows:
+        raise LookupError(f"no title {title_id!r} in walkout.titles")
+    row = rows[0]
+    return int(row["credits_start_sec"] or row["duration_sec"])
 
 
 def investigate(

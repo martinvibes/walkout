@@ -37,7 +37,11 @@ TITLE = {
     "title_id": "sintel",
     "title_name": "Sintel (Blender Foundation, 2010)",
     "duration_sec": 888,
-    "video_uri": "https://download.blender.org/durian/movies/Sintel.2010.720p.mkv",
+    # Gemini reads YouTube URLs directly, so the film never has to be hosted.
+    "video_uri": "https://www.youtube.com/watch?v=eRsGyueVLvQ",
+    # End credits roll at 12:26. Viewers leaving here are finishing, not
+    # abandoning, so this boundary is excluded from detection.
+    "credits_start_sec": 746,
     "license": "CC-BY 3.0",
 }
 
@@ -63,10 +67,20 @@ VERSIONS = ["4.1.7", "4.2.1", "4.3.0"]
 VERSION_P = [0.25, 0.35, 0.40]
 
 # --- planted ground truth ---------------------------------------------------
+# Timecodes are not arbitrary. Each was chosen by asking Gemini to survey the
+# actual footage, so the telemetry and the film agree: a story cliff sits on a
+# genuinely slow passage, and a localization cliff sits on a genuinely
+# dialogue-dependent one. Planting a story cliff over the dragon chase would
+# have produced a demo where the numbers and the picture contradict each other.
 CLIFFS = [
-    {"id": "A", "cause": "story",        "start": 240, "end": 270, "mult": 3.1},
+    # 03:40-04:10 -- Sintel prepares for bed. Static shots, no score, no dialogue.
+    {"id": "A", "cause": "story",        "start": 220, "end": 250, "mult": 3.1},
+    # 09:20-10:00 -- content-independent; a delivery failure can land anywhere.
     {"id": "B", "cause": "technical",    "start": 560, "end": 600, "mult": 9.0},
-    {"id": "C", "cause": "localization", "start":  90, "end": 120, "mult": 4.0},
+    # 02:05-02:35 -- the shaman scene. The plot goal is established entirely in
+    # spoken English; a viewer who cannot follow it is simply lost.
+    {"id": "C", "cause": "localization", "start": 125, "end": 155, "mult": 4.0},
+    # A mild universal dip that must stay below the significance floor.
     {"id": "D", "cause": "decoy",        "start": 620, "end": 640, "mult": 1.35},
 ]
 
@@ -109,6 +123,11 @@ def build_chunk(rng: np.random.Generator, n: int, steps: int, t0: datetime):
 
     cohort_b = (np.isin(dev_names, ["mobile_android", "tv_android"])) & (ver_names == "4.2.1")
     cohort_c = needs_subs & (sub_lang == "")
+
+    # Everyone leaves when the credits roll. That is not a defect and the
+    # detector must never report it, but the data has to contain it -- a
+    # simulator that omits it would be quietly grading its own homework.
+    h[:, pos >= TITLE["credits_start_sec"]] *= 12.0
 
     for c in CLIFFS:
         win = (pos >= c["start"]) & (pos < c["end"])
@@ -208,6 +227,11 @@ def generate(
     steps = TITLE["duration_sec"] // BUCKET_SEC + 1
     t0 = datetime.now(timezone.utc) - timedelta(days=7)
 
+    # Written up front. What was planted is known before a single row is
+    # inserted, and a load that dies halfway must not leave the previous run's
+    # ground truth on disk to be silently graded against.
+    _write_truth(sessions=sessions, seed=seed, events=0)
+
     events = 0
     done = 0
     while done < sessions:
@@ -219,6 +243,10 @@ def generate(
         done += n
         print(f"  {done:>9,} sessions  {events:>12,} events", flush=True)
 
+    return _write_truth(sessions=sessions, seed=seed, events=events)
+
+
+def _write_truth(sessions: int, seed: int, events: int) -> dict[str, Any]:
     truth = {
         "title": TITLE,
         "bucket_sec": BUCKET_SEC,

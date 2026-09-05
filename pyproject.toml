@@ -28,6 +28,7 @@ dev = ["pytest>=8.0.0"]
 walkout-simulate = "walkout.cli:simulate"
 walkout-load = "walkout.cli:load"
 walkout-doctor = "walkout.cli:doctor"
+walkout-eval = "walkout.cli:evaluate"
 
 [build-system]
 requires = ["setuptools>=68"]

@@ -84,6 +84,20 @@ def simulate(argv: list[str] | None = None) -> int:
     return 0
 
 
+def evaluate(argv: list[str] | None = None) -> int:
+    """Grade the pipeline against the planted ground truth."""
+    from .evaluation import evaluate as run, render
+
+    try:
+        client = ch.connect()
+    except ConfigError as exc:
+        print(f"config: {exc}", file=sys.stderr)
+        return 2
+    report = run(client)
+    print(render(report))
+    return 0 if report.passed else 1
+
+
 def doctor(argv: list[str] | None = None) -> int:
     """Fail fast and loudly, before a twenty-minute load discovers the problem."""
     try:

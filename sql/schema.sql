@@ -50,6 +50,7 @@ CREATE TABLE walkout.titles
     title_id      LowCardinality(String),
     title_name    String,
     duration_sec  UInt32,
+    credits_start_sec UInt32,        -- leaving after this is finishing, not quitting
     video_uri     String,          -- gs:// or https:// source for Gemini
     license       String
 )

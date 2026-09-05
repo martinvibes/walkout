@@ -13,10 +13,12 @@ The named queries are parameter-bound. The model supplies values, never SQL.
 
 from __future__ import annotations
 
+import time
 from typing import Any, Iterable, Sequence
 
 import clickhouse_connect
 from clickhouse_connect.driver.client import Client
+from clickhouse_connect.driver.exceptions import OperationalError
 
 from . import queries
 from .config import SQL_DIR, ClickHouseConfig, clickhouse as clickhouse_config
@@ -59,6 +61,12 @@ class UnknownDimension(ValueError):
     pass
 
 
+# A full load is millions of rows over the public internet, and a single
+# dropped connection three minutes in should not cost the whole run.
+INSERT_ATTEMPTS = 4
+INSERT_BACKOFF_SEC = 3.0
+
+
 def connect(config: ClickHouseConfig | None = None) -> Client:
     config = config or clickhouse_config()
     return clickhouse_connect.get_client(
@@ -67,6 +75,10 @@ def connect(config: ClickHouseConfig | None = None) -> Client:
         username=config.username,
         password=config.password,
         secure=config.secure,
+        # Generous, because insert batches are large and the alternative is a
+        # timeout that leaves the table half-populated.
+        send_receive_timeout=600,
+        connect_timeout=30,
     )
 
 
@@ -122,8 +134,24 @@ def apply_schema(client: Client) -> None:
 
 
 def insert_columns(client: Client, table: str, cols: dict[str, Any], names: Sequence[str]) -> int:
+    """Insert one chunk, retrying transient network failures.
+
+    Without this a single dropped connection aborts a ten-minute load and
+    leaves a partially populated table -- which is far more dangerous than an
+    empty one, because every query still returns plausible-looking numbers.
+    """
     rows = list(zip(*[_tolist(cols[n]) for n in names]))
-    client.insert(table, rows, column_names=list(names))
+    for attempt in range(1, INSERT_ATTEMPTS + 1):
+        try:
+            client.insert(table, rows, column_names=list(names))
+            return len(rows)
+        except OperationalError as exc:
+            if attempt == INSERT_ATTEMPTS:
+                raise
+            wait = INSERT_BACKOFF_SEC * attempt
+            print(f"    insert failed ({exc.__class__.__name__}), retrying in {wait:.0f}s "
+                  f"[{attempt}/{INSERT_ATTEMPTS}]", flush=True)
+            time.sleep(wait)
     return len(rows)
 
 

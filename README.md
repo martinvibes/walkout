@@ -64,16 +64,30 @@ sessions — with **cliffs planted at known timecodes for known reasons**:
 
 | | Window | Cause | Who |
 |---|---|---|---|
-| A | 04:00–04:30 | story | everyone, playback clean |
+| A | 03:40–04:10 | story | everyone, playback clean |
 | B | 09:20–10:00 | technical | Android players on build 4.2.1, rebuffering |
-| C | 01:30–02:00 | localization | non-English regions with no subtitle track |
+| C | 02:05–02:35 | localization | non-English locales with no subtitle track |
 | D | 10:20–10:40 | *decoy* | mild, universal, below the significance floor |
 
 Planted ground truth is the point: it is the only way to measure whether the
 agent's diagnosis is actually **right**, rather than merely plausible. `D` must
 never be reported.
 
-The title under analysis is *Sintel* (Blender Foundation, CC-BY 3.0).
+**The timecodes are not arbitrary.** Each was chosen by asking Gemini to survey
+the real footage first, so the telemetry and the film agree. `A` sits on the
+genuinely slowest passage in the film — Sintel going to bed, static shots, no
+score. `C` sits on the shaman scene, where the plot goal is established entirely
+through spoken English. An earlier draft planted the story cliff over the dragon
+chase at 04:08, which would have produced a demo where the numbers claim a scene
+drags while the picture shows a kinetic action sequence.
+
+The film also ends at 12:26, and the simulator models the exodus when the
+credits roll. Detection excludes it. An audience leaving as the credits start
+has finished the film, and reporting that would bury three real findings under
+one meaningless one.
+
+The title under analysis is *Sintel* (Blender Foundation, CC-BY 3.0). Gemini
+reads YouTube URLs directly, so the film is never hosted or shipped.
 
 ## Run it
 
