@@ -235,6 +235,7 @@ docker run --rm --env-file .env -p 8080:8000 walkout
 
 `railway.json` points the platform's health check at `/api/health`, which
 actually queries ClickHouse rather than just proving the process is alive.
+Step-by-step instructions are in [docs/DEPLOY.md](docs/DEPLOY.md).
 
 `make load` is safe to run on a deploy: every statement in the schema is
 `CREATE ... IF NOT EXISTS`, so it brings a fresh cluster up and leaves a
