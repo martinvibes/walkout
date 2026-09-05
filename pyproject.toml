@@ -30,6 +30,7 @@ walkout-load = "walkout.cli:load"
 walkout-doctor = "walkout.cli:doctor"
 walkout-eval = "walkout.cli:evaluate"
 walkout-agent = "walkout.cli:agent"
+walkout-serve = "walkout.web.app:serve"
 
 [build-system]
 requires = ["setuptools>=68"]

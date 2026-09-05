@@ -20,7 +20,7 @@ import clickhouse_connect
 from clickhouse_connect.driver.client import Client
 from clickhouse_connect.driver.exceptions import OperationalError
 
-from . import queries
+from . import queries, warehouse
 from .config import SQL_DIR, ClickHouseConfig, clickhouse as clickhouse_config
 
 # The dimensions the agent may slice a cliff by, mapped to the SQL that
@@ -99,13 +99,7 @@ def run_named(client: Client, name: str, params: dict[str, Any]) -> list[dict[st
     the statement, since a dimension can be a derived expression rather than a
     bindable identifier. Everything else is bound by the driver.
     """
-    sql = queries.load(name)
-    params = dict(params)
-    dim = params.pop("dim", None)
-    if DIM_SLOT in sql:
-        if dim is None:
-            raise ValueError(f"query {name!r} needs a `dim` parameter")
-        sql = sql.replace(DIM_SLOT, check_dimension(dim))
+    sql, params = warehouse.prepare(name, params)
     result = client.query(sql, parameters=params)
     return [dict(zip(result.column_names, row)) for row in result.result_rows]
 

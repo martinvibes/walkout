@@ -1,4 +1,4 @@
-.PHONY: help install mcp-server doctor load simulate eval eval-mcp agent test clean
+.PHONY: help install mcp-server doctor load simulate eval eval-mcp agent serve test clean
 
 VENV     ?= .venv
 MCP_VENV ?= .venv-mcp
@@ -14,6 +14,7 @@ help:
 	@echo "make eval        grade the pipeline against planted ground truth"
 	@echo "make eval-mcp    grade it through the ClickHouse MCP server instead"
 	@echo "make agent       run the agent over sintel (TITLE=... to change)"
+	@echo "make serve       run the web app on http://127.0.0.1:8000"
 	@echo "make test        run the unit tests"
 
 $(VENV):
@@ -51,6 +52,9 @@ eval-mcp:
 
 agent:
 	$(PY) -c "import sys; from walkout.cli import agent; sys.exit(agent(['$(or $(TITLE),sintel)']))"
+
+serve:
+	$(PY) -c "from walkout.web.app import serve; raise SystemExit(serve())"
 
 test:
 	$(PY) -m pytest -q

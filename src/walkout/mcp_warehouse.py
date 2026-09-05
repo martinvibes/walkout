@@ -27,8 +27,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 from .config import PROJECT_ROOT, ClickHouseConfig, clickhouse
-from .queries import load as load_query
-from .warehouse import Row, render
+from .warehouse import Row, prepare, render
 
 SERVER_COMMAND = "mcp-clickhouse"
 # The MCP server is a separate process, so it gets a separate environment. It
@@ -92,6 +91,10 @@ def server_env(config: ClickHouseConfig) -> dict[str, str]:
         "CLICKHOUSE_PASSWORD": config.password,
         "CLICKHOUSE_SECURE": "true" if config.secure else "false",
         "CLICKHOUSE_DATABASE": config.database,
+        # An investigation is a dozen queries and the defaults (30s, few
+        # workers) are sized for a chat client asking one question at a time.
+        "CLICKHOUSE_MCP_QUERY_TIMEOUT": "120",
+        "CLICKHOUSE_MCP_MAX_WORKERS": "16",
     }
 
 
@@ -198,13 +201,5 @@ class McpWarehouse:
 
     def run_named(self, name: str, params: dict[str, Any]) -> list[Row]:
         """Run one of sql/queries/*.sql with its parameters rendered inline."""
-        from .clickhouse import DIM_SLOT, check_dimension
-
-        sql = load_query(name)
-        params = dict(params)
-        dim = params.pop("dim", None)
-        if DIM_SLOT in sql:
-            if dim is None:
-                raise ValueError(f"query {name!r} needs a `dim` parameter")
-            sql = sql.replace(DIM_SLOT, check_dimension(dim))
+        sql, params = prepare(name, params)
         return self.run_sql(render(sql, params))

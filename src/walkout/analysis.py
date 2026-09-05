@@ -126,33 +126,49 @@ def investigate(
     dimensions: tuple[str, ...] = DEFAULT_DIMENSIONS,
     bucket_sec: int = 10,
     min_cohort: int = 500,
+    playback_baseline: dict[str, float] | None = None,
 ) -> Investigation:
-    """Slice one cliff every way that matters and weigh the playback evidence."""
+    """Slice one cliff every way that matters and weigh the playback evidence.
+
+    `playback_baseline` is the same for every cliff in a title, so a caller
+    investigating several should fetch it once and pass it in.
+    """
     result = Investigation(cliff=cliff)
 
+    rows = warehouse.run_named(
+        "segment_cliff_all",
+        dict(
+            title_id=title_id,
+            start_sec=cliff.start_sec,
+            end_sec=cliff.end_sec,
+            min_cohort=min_cohort,
+        ),
+    )
+    by_dimension: dict[str, list[dict[str, Any]]] = {}
+    for row in rows:
+        by_dimension.setdefault(str(row["dimension"]), []).append(row)
+
     for dim in dimensions:
-        rows = warehouse.run_named(
-        "segment_cliff",
-            dict(
-                title_id=title_id,
-                dim=dim,
-                start_sec=cliff.start_sec,
-                end_sec=cliff.end_sec,
-                min_cohort=min_cohort,
-            ),
-        )
         result.cohorts[dim] = rank_cohorts(
-            rows, dim, overall_hazard=cliff.hazard, min_concentration=CONCENTRATION_FLOOR
+            by_dimension.get(dim, []),
+            dim,
+            overall_hazard=cliff.hazard,
+            min_concentration=CONCENTRATION_FLOOR,
         )
 
-    _measure_playback(warehouse, title_id, cliff, bucket_sec, result)
+    _measure_playback(warehouse, title_id, cliff, bucket_sec, result, playback_baseline)
     result.evidence = _describe(result)
     result.proposed_cause = _propose(result)
     return result
 
 
 def _measure_playback(
-    warehouse: Warehouse, title_id: str, cliff: Cliff, bucket_sec: int, result: Investigation
+    warehouse: Warehouse,
+    title_id: str,
+    cliff: Cliff,
+    bucket_sec: int,
+    result: Investigation,
+    baseline: dict[str, float] | None = None,
 ) -> None:
     """Compare rebuffering inside the window against the same cohorts' own
     behaviour across the whole title.
@@ -174,11 +190,8 @@ def _measure_playback(
     if not window:
         return
 
-    baseline = {
-        row["cohort"]: float(row["rebuffer_event_rate"])
-        for row in warehouse.run_named(
-        "qoe_baseline", dict(title_id=title_id, dim="app_version"))
-    }
+    if baseline is None:
+        baseline = playback_baseline(warehouse, title_id)
 
     worst = max(window, key=lambda r: float(r["rebuffer_ratio"]))
     result.worst_delivery_cohort = str(worst["cohort"])
@@ -189,6 +202,20 @@ def _measure_playback(
     result.rebuffer_lift = (
         result.rebuffer_ratio_in_window / everywhere if everywhere > 0 else float("inf")
     )
+
+
+def playback_baseline(warehouse: Warehouse, title_id: str) -> dict[str, float]:
+    """Each delivery cohort's rebuffering across the whole title.
+
+    Per title, not per cliff -- the cliffs are compared against it, so
+    refetching it for each one is the same answer at three times the cost.
+    """
+    return {
+        str(row["cohort"]): float(row["rebuffer_event_rate"])
+        for row in warehouse.run_named(
+            "qoe_baseline", dict(title_id=title_id, dim="app_version")
+        )
+    }
 
 
 def _describe(result: Investigation) -> list[str]:

@@ -57,6 +57,39 @@ def quote(value: Any, sql_type: str) -> str:
     )
 
 
+DIM_SLOT = "$DIM$"
+DIMS_SLOT = "$DIMS$"
+
+
+def prepare(name: str, params: dict[str, Any]) -> tuple[str, dict[str, Any]]:
+    """Load a named query and fill its dimension slots.
+
+    A dimension can be a derived expression rather than a bindable identifier,
+    so it is resolved through the allow-list and substituted as text. Both
+    warehouse implementations go through here, or the two would drift.
+    """
+    from .clickhouse import SEGMENT_EXPRESSIONS, check_dimension
+    from .queries import load
+
+    sql = load(name)
+    params = dict(params)
+    dim = params.pop("dim", None)
+
+    if DIM_SLOT in sql:
+        if dim is None:
+            raise ValueError(f"query {name!r} needs a `dim` parameter")
+        sql = sql.replace(DIM_SLOT, check_dimension(dim))
+
+    if DIMS_SLOT in sql:
+        pairs = ", ".join(
+            f"('{key}', toString({expression}))"
+            for key, expression in SEGMENT_EXPRESSIONS.items()
+        )
+        sql = sql.replace(DIMS_SLOT, pairs)
+
+    return sql, params
+
+
 def render(sql: str, params: dict[str, Any]) -> str:
     """Substitute {name:Type} placeholders with escaped literals."""
     missing = []
