@@ -178,6 +178,19 @@ DROP TABLE IF EXISTS walkout.playback_events;
 
         assert split_statements("SELECT 1;\n-- trailing note\n") == ["SELECT 1"]
 
+    def test_a_semicolon_inside_a_comment_does_not_split_the_script(self):
+        """Regression: comments were stripped after splitting on ';', so prose
+        like "it failed three times; this uploads 20MB" was cut in half and the
+        tail parsed as SQL."""
+        from walkout.clickhouse import split_statements
+
+        sql = """-- it failed three times; this uploads about 20MB instead
+CREATE TABLE walkout.sessions (session_id String) ENGINE = MergeTree ORDER BY session_id;
+"""
+        statements = split_statements(sql)
+        assert len(statements) == 1
+        assert statements[0].startswith("CREATE TABLE")
+
 
 class TestSegmentDimensions:
     """The dimension allow-list is the only place model output touches SQL

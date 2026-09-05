@@ -111,20 +111,49 @@ def run_named(client: Client, name: str, params: dict[str, Any]) -> list[dict[st
 
 
 def split_statements(sql: str) -> list[str]:
-    """Split a script into executable statements, dropping comment-only ones.
+    """Split a script into executable statements.
 
-    The driver takes one statement per call. Leading `--` lines have to be
-    stripped rather than used to skip the statement, or a documented statement
-    silently never runs -- which is exactly how CREATE DATABASE went missing.
+    Comments are stripped *before* splitting on semicolons, not after. A prose
+    comment containing a semicolon would otherwise be cut in half, and its tail
+    parsed as SQL -- which is exactly what happened, with the error pointing at
+    a sentence fragment rather than at the comment it came from.
+
+    Statement-terminating semicolons inside string literals would still fool
+    this; the schema has none, and a real migration tool is the answer if that
+    ever changes.
     """
-    statements = []
-    for chunk in sql.split(";"):
-        body = "\n".join(
-            line for line in chunk.splitlines() if not line.strip().startswith("--")
-        ).strip()
-        if body:
-            statements.append(body)
-    return statements
+    stripped = "\n".join(
+        line for line in sql.splitlines() if not line.strip().startswith("--")
+    )
+    return [chunk.strip() for chunk in stripped.split(";") if chunk.strip()]
+
+
+def expand_events(client: Client, title_id: str, bucket_sec: int,
+                  degraded_start: int, degraded_end: int) -> int:
+    """Turn uploaded session descriptors into playback heartbeats, server-side.
+
+    One statement, so the events table is either fully populated for this title
+    or not at all -- there is no partial state for a query to quietly succeed
+    against.
+    """
+    sql = (SQL_DIR / "expand_events.sql").read_text()
+    client.command(sql, parameters=dict(
+        title_id=title_id, bucket_sec=bucket_sec,
+        degraded_start=degraded_start, degraded_end=degraded_end,
+    ))
+    return int(client.command(
+        "SELECT count() FROM walkout.playback_events WHERE title_id = {t:String}",
+        parameters={"t": title_id},
+    ))
+
+
+def list_tables(client: Client) -> list[str]:
+    """Names of the tables that actually exist, so the CLI reports the cluster
+    rather than a hardcoded list that drifts every time the schema grows."""
+    rows = client.query(
+        "SELECT name FROM system.tables WHERE database = 'walkout' ORDER BY name"
+    ).result_rows
+    return [f"walkout.{name}" for (name,) in rows]
 
 
 def apply_schema(client: Client) -> None:

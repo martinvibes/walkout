@@ -27,7 +27,8 @@ def load(argv: list[str] | None = None) -> int:
     except ConfigError as exc:
         print(f"config: {exc}", file=sys.stderr)
         return 2
-    print("schema applied: walkout.playback_events, walkout.titles")
+    tables = ", ".join(ch.list_tables(client))
+    print(f"schema applied: {tables}")
     return 0
 
 
@@ -50,8 +51,8 @@ def simulate(argv: list[str] | None = None) -> int:
         except ConfigError as exc:
             print(f"config: {exc}", file=sys.stderr)
             return 2
-        client.command("TRUNCATE TABLE IF EXISTS walkout.playback_events")
-        client.command("TRUNCATE TABLE IF EXISTS walkout.titles")
+        for table in ("playback_events", "sessions", "titles"):
+            client.command(f"TRUNCATE TABLE IF EXISTS walkout.{table}")
         ch.insert_columns(
             client,
             "walkout.titles",
@@ -60,7 +61,7 @@ def simulate(argv: list[str] | None = None) -> int:
         )
         sinks.append(
             lambda cols, _c=client: ch.insert_columns(
-                _c, "walkout.playback_events", cols, simulation.COLUMNS
+                _c, "walkout.sessions", cols, simulation.SESSION_COLUMNS
             )
         )
     if args.out:
@@ -79,7 +80,21 @@ def simulate(argv: list[str] | None = None) -> int:
     truth = simulation.generate(
         sessions=args.sessions, chunk=args.chunk, seed=args.seed, on_chunk=fan_out
     )
-    print(f"\n{truth['events']:,} events across {truth['sessions']:,} sessions")
+
+    if args.clickhouse:
+        degraded = next(c for c in simulation.CLIFFS if c["cause"] == "technical")
+        print("\nexpanding sessions into events inside ClickHouse...", flush=True)
+        rows = ch.expand_events(
+            client,
+            title_id=simulation.TITLE["title_id"],
+            bucket_sec=simulation.BUCKET_SEC,
+            degraded_start=degraded["start"],
+            degraded_end=degraded["end"],
+        )
+        print(f"{rows:,} events across {truth['sessions']:,} sessions")
+    else:
+        print(f"\n{truth['events']:,} events across {truth['sessions']:,} sessions")
+
     print("ground truth -> data/ground_truth.json")
     return 0
 

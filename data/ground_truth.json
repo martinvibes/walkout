@@ -9,7 +9,7 @@
   },
   "bucket_sec": 10,
   "sessions": 250000,
-  "events": 0,
+  "events": 13065665,
   "seed": 7,
   "cliffs": [
     {

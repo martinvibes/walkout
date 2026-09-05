@@ -147,69 +147,40 @@ def build_chunk(rng: np.random.Generator, n: int, steps: int, t0: datetime):
     exit_step = np.argmax(left, axis=1)
     completed = exit_step == (steps - 1)
 
-    # --- expand sessions into one row per heartbeat --------------------------
-    lengths = (exit_step + 1).astype(np.int64)
-    total = int(lengths.sum())
-    sidx = np.repeat(np.arange(n), lengths)                       # session index per row
-    step = np.arange(total) - np.repeat(np.cumsum(lengths) - lengths, lengths)
-    position = (step * BUCKET_SEC).astype(np.uint32)
-
-    is_first = step == 0
-    is_last = step == np.repeat(exit_step, lengths)
-
-    # --- quality of experience ----------------------------------------------
-    row_plat = plat[sidx]
-    bitrate = np.where(row_plat == "tv", rng.integers(5500, 12000, total),
-              np.where(row_plat == "web", rng.integers(2800, 8000, total),
-                                          rng.integers(1100, 4200, total))).astype(np.int64)
-    p_rebuf = np.where(row_plat == "mobile", 0.012, 0.005)
-    rebuffer = np.where(rng.random(total) < p_rebuf,
-                        rng.integers(180, 1400, total), 0).astype(np.int64)
-    dropped = rng.integers(0, 4, total).astype(np.int64)
-
-    # The technical cliff has to be *visible in the telemetry*, otherwise the
-    # agent has no honest way to tell it apart from a bad scene.
-    tech = next(c for c in CLIFFS if c["cause"] == "technical")
-    in_tech = cohort_b[sidx] & (position >= tech["start"]) & (position < tech["end"])
-    hit = in_tech & (rng.random(total) < 0.78)
-    rebuffer = np.where(hit, rng.integers(1800, 6500, total), rebuffer)
-    bitrate = np.where(hit, rng.integers(250, 900, total), bitrate)
-    dropped = np.where(hit, rng.integers(20, 140, total), dropped)
-
-    startup = np.where(row_plat == "mobile", rng.integers(700, 3200, total),
-                                             rng.integers(400, 1800, total)).astype(np.int64)
-
-    etype = np.where(is_first, "start",
-             np.where(is_last, np.where(completed[sidx], "complete", "exit"),
-              np.where(rebuffer > 900, "rebuffer", "heartbeat")))
-
-    # Sessions start at random points across a week of traffic.
-    # DateTime64(3) reads a bare integer as *milliseconds*, so emit ms --
-    # passing seconds here silently lands every event in January 1970.
+    # --- session descriptors -------------------------------------------------
+    # The row explosion happens in ClickHouse. See sql/expand_events.sql.
     sess_offset = rng.integers(0, 7 * 24 * 3600, n)
-    epoch = int(t0.timestamp())
-    ts = (epoch + sess_offset[sidx] + position.astype(np.int64)) * 1000
+    start_ts = int(t0.timestamp()) + sess_offset
 
-    sess_ids = np.array([f"s{i:012x}" for i in rng.integers(0, 2**44, n)])
-    view_ids = np.array([f"v{i:010x}" for i in rng.integers(0, 2**38, n)])
+    startup = np.where(plat == "mobile", rng.integers(700, 3200, n),
+                                         rng.integers(400, 1800, n)).astype(np.int64)
 
     return {
-        "event_time": ts, "session_id": sess_ids[sidx], "viewer_id": view_ids[sidx],
-        "title_id": np.full(total, TITLE["title_id"]), "position_sec": position,
-        "event_type": etype, "device": dev_names[sidx], "platform": row_plat,
-        "region": reg_names[sidx], "app_version": ver_names[sidx],
-        "is_first_time": first_time[sidx], "subtitle_lang": sub_lang[sidx],
-        "audio_lang": np.full(total, "en"), "locale_lang": locale[sidx],
-        "bitrate_kbps": bitrate,
-        "rebuffer_ms": rebuffer, "startup_ms": startup, "dropped_frames": dropped,
-        "cdn_pop": pop[sidx],
+        "session_id": np.array([f"s{i:012x}" for i in rng.integers(0, 2**44, n)]),
+        "viewer_id": np.array([f"v{i:010x}" for i in rng.integers(0, 2**38, n)]),
+        "title_id": np.full(n, TITLE["title_id"]),
+        "device": dev_names,
+        "platform": plat,
+        "region": reg_names,
+        "app_version": ver_names,
+        "is_first_time": first_time,
+        "subtitle_lang": sub_lang,
+        "audio_lang": np.full(n, "en"),
+        "locale_lang": locale,
+        "cdn_pop": pop,
+        "start_ts": start_ts.astype(np.int64),
+        "exit_step": exit_step.astype(np.int64),
+        "completed": completed.astype(np.uint8),
+        "startup_ms": startup,
+        "degraded_cohort": cohort_b.astype(np.uint8),
     }
 
 
-COLUMNS = ["event_time", "session_id", "viewer_id", "title_id", "position_sec",
-           "event_type", "device", "platform", "region", "app_version",
-           "is_first_time", "subtitle_lang", "audio_lang", "locale_lang", "bitrate_kbps",
-           "rebuffer_ms", "startup_ms", "dropped_frames", "cdn_pop"]
+SESSION_COLUMNS = [
+    "session_id", "viewer_id", "title_id", "device", "platform", "region",
+    "app_version", "is_first_time", "subtitle_lang", "audio_lang", "locale_lang",
+    "cdn_pop", "start_ts", "exit_step", "completed", "startup_ms", "degraded_cohort",
+]
 
 
 def generate(
@@ -239,9 +210,9 @@ def generate(
         cols = build_chunk(rng, n, steps, t0)
         if on_chunk is not None:
             on_chunk(cols)
-        events += len(cols["position_sec"])
+        events += int(cols["exit_step"].sum() + n)   # heartbeats the expansion will emit
         done += n
-        print(f"  {done:>9,} sessions  {events:>12,} events", flush=True)
+        print(f"  {done:>9,} sessions  ({events:>12,} events pending expansion)", flush=True)
 
     return _write_truth(sessions=sessions, seed=seed, events=events)
 
