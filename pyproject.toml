@@ -10,7 +10,10 @@ license = { text = "Apache-2.0" }
 dependencies = [
     "google-adk>=1.0.0",
     "google-genai>=1.0.0",
-    "google-cloud-storage>=2.18.0",
+    # ADK's MCP integration and Walkout's own MCP client both need the 1.x
+    # protocol library. The ClickHouse MCP *server* needs 2.x, which is why it
+    # lives in its own environment -- see `make mcp-server`.
+    "mcp>=1.24,<2",
     "clickhouse-connect>=0.8.0",
     "fastapi>=0.115.0",
     "uvicorn[standard]>=0.30.0",
@@ -19,9 +22,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-# mcp-clickhouse is the partner integration proper; pinned separately so the
-# simulator and unit tests can run without it.
-mcp = ["mcp-clickhouse>=0.1.10"]
 dev = ["pytest>=8.0.0"]
 
 [project.scripts]
@@ -29,6 +29,7 @@ walkout-simulate = "walkout.cli:simulate"
 walkout-load = "walkout.cli:load"
 walkout-doctor = "walkout.cli:doctor"
 walkout-eval = "walkout.cli:evaluate"
+walkout-agent = "walkout.cli:agent"
 
 [build-system]
 requires = ["setuptools>=68"]

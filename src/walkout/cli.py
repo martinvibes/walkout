@@ -3,6 +3,8 @@
     walkout-load                     apply the schema
     walkout-simulate --clickhouse    generate telemetry and insert it
     walkout-simulate --out data/     generate telemetry to gzipped CSV
+    walkout-eval                     grade the pipeline against ground truth
+    walkout-agent sintel             run the agent over a title
     walkout-doctor                   check credentials before a long run
 
 Or via the Makefile, which is the shorter path.
@@ -153,6 +155,57 @@ def doctor(argv: list[str] | None = None) -> int:
     if "playback_events" in names:
         count = client.command("SELECT count() FROM walkout.playback_events")
         print(f"  playback_events: {int(count):,} rows")
+    return 0
+
+
+def agent(argv: list[str] | None = None) -> int:
+    """Run the agent over one title and print its investigation as it happens.
+
+    The tool calls are printed as they are made, because the point of the
+    product is the reasoning, not just the verdict: you can watch it find the
+    cliffs, slice them, and go and look at the film.
+    """
+    import asyncio
+
+    parser = argparse.ArgumentParser(prog="walkout-agent")
+    parser.add_argument("title_id", nargs="?", default="sintel")
+    parser.add_argument("--ask", default=None, help="ask something else entirely")
+    parser.add_argument("--quiet", action="store_true", help="verdict only")
+    args = parser.parse_args(argv)
+
+    prompt = args.ask or (
+        f"Analyse {args.title_id}. Work through every cliff and tell me what to fix."
+    )
+    try:
+        return asyncio.run(_run_agent(prompt, quiet=args.quiet))
+    except ConfigError as exc:
+        print(f"config: {exc}", file=sys.stderr)
+        return 2
+    except KeyboardInterrupt:
+        return 130
+
+
+async def _run_agent(prompt: str, quiet: bool = False) -> int:
+    from google.adk.runners import InMemoryRunner
+    from google.genai import types
+
+    from .agent import root_agent
+
+    runner = InMemoryRunner(agent=root_agent, app_name="walkout")
+    session = await runner.session_service.create_session(
+        app_name="walkout", user_id="cli"
+    )
+    async for event in runner.run_async(
+        user_id="cli",
+        session_id=session.id,
+        new_message=types.Content(role="user", parts=[types.Part(text=prompt)]),
+    ):
+        for part in event.content.parts if event.content else []:
+            if part.function_call and not quiet:
+                print(f"  -> {part.function_call.name}", file=sys.stderr, flush=True)
+            elif part.text and event.author != "user":
+                print(part.text, end="", flush=True)
+    print()
     return 0
 
 

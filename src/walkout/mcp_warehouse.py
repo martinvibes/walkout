@@ -26,11 +26,15 @@ from typing import Any
 from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
-from .config import ClickHouseConfig, clickhouse
+from .config import PROJECT_ROOT, ClickHouseConfig, clickhouse
 from .queries import load as load_query
 from .warehouse import Row, render
 
 SERVER_COMMAND = "mcp-clickhouse"
+# The MCP server is a separate process, so it gets a separate environment. It
+# is built on fastmcp, which needs mcp 2.x, while ADK needs mcp 1.x -- a
+# conflict that only exists if you insist on one interpreter for both. Keeping
+# them apart also keeps this project's own dependency tree Google-only.
 STARTUP_TIMEOUT_SEC = 60.0
 QUERY_TIMEOUT_SEC = 180.0
 
@@ -42,18 +46,28 @@ class McpError(RuntimeError):
 def server_command() -> str:
     """Absolute path to the MCP server executable.
 
-    Prefer the one installed alongside the interpreter that is running us: on a
-    host with several Pythons, whichever `mcp-clickhouse` happens to be first on
-    PATH may belong to a different environment.
+    Checked in order of how deliberate each choice is: an explicit override,
+    then the dedicated server environment, then whatever is on PATH.
     """
-    beside_interpreter = Path(sys.executable).parent / SERVER_COMMAND
-    if beside_interpreter.exists():
-        return str(beside_interpreter)
+    override = os.environ.get("WALKOUT_MCP_COMMAND", "").strip()
+    if override:
+        return override
+
+    candidates = [
+        PROJECT_ROOT / ".venv-mcp" / "bin" / SERVER_COMMAND,
+        Path(sys.executable).parent / SERVER_COMMAND,
+    ]
+    for candidate in candidates:
+        if candidate.exists():
+            return str(candidate)
+
     found = shutil.which(SERVER_COMMAND)
     if found:
         return found
     raise McpError(
-        f"{SERVER_COMMAND} is not installed. run: pip install -e '.[mcp]'"
+        f"{SERVER_COMMAND} is not installed. run: make mcp-server\n"
+        f"(it installs into .venv-mcp, kept apart from this project's own "
+        f"dependencies on purpose)"
     )
 
 
@@ -166,7 +180,7 @@ class McpWarehouse:
         payload = "\n".join(
             block.text for block in result.content if getattr(block, "text", None)
         )
-        if result.is_error:
+        if getattr(result, "is_error", None) or getattr(result, "isError", False):
             raise McpError(f"{tool} failed: {payload}")
         return payload
 

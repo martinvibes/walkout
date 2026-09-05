@@ -9,3 +9,5 @@ data/*.parquet
 .env.*
 !.env.example
 *.log
+data/scene_readings/
+.venv-mcp/

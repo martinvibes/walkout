@@ -53,11 +53,21 @@ class ClickHouseConfig:
         )
 
 
+# Orchestration and video understanding run on separate models on purpose.
+# They want different things -- one is a fast reasoner making a dozen short
+# calls, the other reads video once and carefully -- and on the free tier the
+# request quota is counted per model, so separating them also stops a long
+# investigation from starving its own video reads.
+DEFAULT_MODEL = "gemini-3.5-flash"
+DEFAULT_VISION_MODEL = "gemini-3.6-flash"
+
+
 @dataclass(frozen=True)
 class GoogleConfig:
     project: str
     location: str
     model: str
+    vision_model: str
 
     @classmethod
     def from_env(cls) -> "GoogleConfig":
@@ -65,7 +75,8 @@ class GoogleConfig:
         return cls(
             project=_require("GOOGLE_CLOUD_PROJECT", hint),
             location=os.environ.get("GOOGLE_CLOUD_LOCATION", "us-central1"),
-            model=os.environ.get("WALKOUT_MODEL", "gemini-flash-latest"),
+            model=os.environ.get("WALKOUT_MODEL", DEFAULT_MODEL),
+            vision_model=os.environ.get("WALKOUT_VISION_MODEL", DEFAULT_VISION_MODEL),
         )
 
 
