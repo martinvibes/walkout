@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import time
 from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, AsyncIterator
@@ -24,8 +25,8 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import FileResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
-from .. import analysis
-from ..config import ConfigError
+from .. import analysis, reports
+from ..config import ConfigError, google
 from ..detection import recoverable_watch_hours
 from ..mcp_warehouse import McpWarehouse
 from ..models import timecode
@@ -179,6 +180,12 @@ async def _agent_events(title_id: str, question: str | None) -> AsyncIterator[st
     def event(kind: str, **payload: Any) -> str:
         return f"data: {json.dumps({'type': kind, **payload})}\n\n"
 
+    # Kept so the run can be replayed later without spending a model call.
+    written: list[str] = []
+    trace: list[dict[str, Any]] = []
+    started_at = time.monotonic()
+    complete = False
+
     yield event("started", title_id=title_id)
     try:
         runner = InMemoryRunner(agent=root_agent, app_name="walkout")
@@ -195,19 +202,37 @@ async def _agent_events(title_id: str, question: str | None) -> AsyncIterator[st
         ):
             for part in item.content.parts if item.content else []:
                 if part.function_call:
-                    yield event(
-                        "tool_call",
-                        name=part.function_call.name,
-                        args=dict(part.function_call.args or {}),
-                    )
+                    call = {
+                        "name": part.function_call.name,
+                        "args": dict(part.function_call.args or {}),
+                    }
+                    trace.append(call)
+                    yield event("tool_call", **call)
                 elif part.function_response:
                     yield event("tool_result", name=part.function_response.name)
                 elif part.text and item.author != "user":
+                    written.append(part.text)
                     yield event("text", text=part.text)
             await asyncio.sleep(0)
+        complete = True
         yield event("done")
     except Exception as exc:  # noqa: BLE001 -- the browser deserves the reason
         yield event("error", message=f"{type(exc).__name__}: {exc}")
+    finally:
+        # Also on the failure path, and also when the browser goes away. A run
+        # that died on the last cliff still found the first two, and throwing
+        # that out would mean spending the whole quota again to learn the same
+        # thing. It is stored flagged, and the page says it was cut short.
+        report = "".join(written).strip()
+        if report:
+            reports.save(
+                title_id=title_id,
+                model=google().model,
+                report=report,
+                trace=trace,
+                complete=complete,
+                duration_ms=int((time.monotonic() - started_at) * 1000),
+            )
 
 
 @app.get("/api/agent/{title_id}")
@@ -219,6 +244,20 @@ async def agent_stream(title_id: str, q: str | None = None) -> StreamingResponse
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@app.get("/api/agent/{title_id}/last")
+def agent_last(title_id: str) -> dict[str, Any]:
+    """The most recent investigation, replayed from ClickHouse.
+
+    A full run costs about ten model calls against a per-day quota, so the page
+    opens with the last one already on screen and asks before spending another.
+    Nothing here is stale in a way that matters: the telemetry it was drawn from
+    is a fixed dataset.
+    """
+    _title_or_404(title_id)
+    found = reports.latest(warehouse(), title_id)
+    return found.to_dict() if found else {}
 
 
 @app.get("/api/health")

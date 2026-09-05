@@ -22,15 +22,34 @@ from .config import ConfigError, clickhouse as clickhouse_config
 
 
 def load(argv: list[str] | None = None) -> int:
-    """Apply sql/schema.sql to the configured cluster."""
+    """Apply sql/schema.sql to the configured cluster.
+
+    Safe to run repeatedly and safe to run on a deploy: every statement in the
+    schema is CREATE ... IF NOT EXISTS, so existing data survives. Rebuilding
+    the tables is `--reset`, which drops them and says how many rows that costs
+    before it does.
+    """
+    parser = argparse.ArgumentParser(prog="walkout-load")
+    parser.add_argument(
+        "--reset", action="store_true",
+        help="drop the tables first -- destroys all loaded telemetry",
+    )
+    args = parser.parse_args(argv)
+
     try:
         client = ch.connect()
-        ch.apply_schema(client)
     except ConfigError as exc:
         print(f"config: {exc}", file=sys.stderr)
         return 2
-    tables = ", ".join(ch.list_tables(client))
-    print(f"schema applied: {tables}")
+
+    if args.reset:
+        for table in ch.list_tables(client):
+            rows = int(client.command(f"SELECT count() FROM {table}"))
+            print(f"dropping {table} ({rows:,} rows)")
+            client.command(f"DROP TABLE IF EXISTS {table}")
+
+    ch.apply_schema(client)
+    print(f"schema applied: {', '.join(ch.list_tables(client))}")
     return 0
 
 

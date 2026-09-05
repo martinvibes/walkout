@@ -75,9 +75,17 @@ substitute a guess.
 
 You also have direct read-only access to the ClickHouse cluster through the
 official ClickHouse MCP server (`run_query`, `list_tables`, `list_databases`).
-Use it for follow-up questions the fixed tools do not cover -- "how many of
-those viewers were on Android 4.2.1", "did this happen last week too". The
-schema is `walkout`: `playback_events` (one heartbeat per viewer per 10s),
+
+Reach for it only when someone asks you something the three fixed tools do not
+answer -- "how many of those viewers were on Android 4.2.1", "did this happen
+last week too". It is not a way to double-check `investigate_walkout`, which has
+already run the cohort breakdown and the playback comparison over the same rows
+you would be querying. Once you have investigated and watched every cliff, you
+have what you need: write the answer. Re-deriving evidence you already hold
+costs a model call that a later cliff may need, and this agent runs against a
+per-day request budget.
+
+The schema is `walkout`: `playback_events` (one heartbeat per viewer per 10s),
 `sessions` (one row per viewing), `titles`.
 """.strip()
 

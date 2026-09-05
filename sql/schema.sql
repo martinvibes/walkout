@@ -4,9 +4,14 @@
 
 CREATE DATABASE IF NOT EXISTS walkout;
 
-DROP TABLE IF EXISTS walkout.playback_events;
+-- Every statement here is IF NOT EXISTS, and that is load-bearing. An earlier
+-- version opened each table with DROP TABLE IF EXISTS, which made `make load`
+-- -- documented as "applies the schema", and the obvious thing to run on a new
+-- deploy -- silently destroy thirteen million rows. Rebuilding the tables is a
+-- real need, but it is `walkout-load --reset`, which says so and counts what it
+-- is about to delete.
 
-CREATE TABLE walkout.playback_events
+CREATE TABLE IF NOT EXISTS walkout.playback_events
 (
     event_time      DateTime64(3),
     session_id      String,
@@ -47,9 +52,7 @@ SETTINGS index_granularity = 8192;
 -- into its heartbeats server-side. Pushing 14M rows up a home connection took
 -- ten minutes and failed three times; this uploads about 20MB and cannot half-
 -- populate the events table, because the expansion is a single statement.
-DROP TABLE IF EXISTS walkout.sessions;
-
-CREATE TABLE walkout.sessions
+CREATE TABLE IF NOT EXISTS walkout.sessions
 (
     session_id      String,
     viewer_id       String,
@@ -74,9 +77,7 @@ ORDER BY (title_id, session_id);
 
 -- Titles under analysis. Kept tiny and human-readable so the agent can
 -- resolve "the Sintel cut" -> title_id without guessing.
-DROP TABLE IF EXISTS walkout.titles;
-
-CREATE TABLE walkout.titles
+CREATE TABLE IF NOT EXISTS walkout.titles
 (
     title_id      LowCardinality(String),
     title_name    String,
@@ -87,3 +88,25 @@ CREATE TABLE walkout.titles
 )
 ENGINE = MergeTree
 ORDER BY title_id;
+
+
+-- ---------------------------------------------------------------------------
+-- The agent's own findings, kept so the page always has something to show.
+--
+-- A full investigation costs about ten model calls, and a free-tier key is
+-- capped per day. Without this, the second person to open the page today gets
+-- a quota error instead of a product. The newest report per title wins, which
+-- is what ReplacingMergeTree does with a version column.
+-- ---------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS walkout.agent_reports
+(
+    title_id    LowCardinality(String),
+    model       LowCardinality(String),
+    report      String,                  -- the markdown the agent wrote
+    trace       String,                  -- JSON: the tool calls it made
+    complete    UInt8,                   -- 0 if the run died before finishing
+    duration_ms UInt32,
+    created_at  DateTime64(3)
+)
+ENGINE = ReplacingMergeTree(created_at)
+ORDER BY (title_id, model);

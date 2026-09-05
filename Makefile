@@ -9,7 +9,8 @@ help:
 	@echo "make install     create the venv and install walkout"
 	@echo "make mcp-server  install the ClickHouse MCP server (its own venv)"
 	@echo "make doctor      check ClickHouse credentials and row counts"
-	@echo "make load        apply sql/schema.sql to the cluster"
+	@echo "make load        apply sql/schema.sql (safe to repeat, keeps data)"
+	@echo "make reload      drop the tables and reapply -- destroys all rows"
 	@echo "make simulate    generate telemetry and insert it (250k sessions)"
 	@echo "make eval        grade the pipeline against planted ground truth"
 	@echo "make eval-mcp    grade it through the ClickHouse MCP server instead"
@@ -39,7 +40,12 @@ doctor:
 	$(PY) -c "from walkout.cli import doctor; raise SystemExit(doctor())"
 
 load:
-	$(PY) -c "from walkout.cli import load; raise SystemExit(load())"
+	$(PY) -c "import sys; from walkout.cli import load; sys.exit(load([]))"
+
+# Drops the tables and recreates them. Only for a schema change -- it destroys
+# every loaded row, and prints the count so you know what you are spending.
+reload:
+	$(PY) -c "import sys; from walkout.cli import load; sys.exit(load(['--reset']))"
 
 simulate:
 	$(PY) -m walkout.cli --clickhouse --sessions $(or $(SESSIONS),250000)

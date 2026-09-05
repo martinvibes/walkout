@@ -46,20 +46,61 @@ diagnosis only exists in the join.
 
 | Layer | Technology |
 |---|---|
-| Agent | Google Agent Development Kit (ADK) on Vertex AI |
-| Reasoning + video | Gemini on Vertex AI, agentic video understanding |
+| Agent | Google Agent Development Kit (ADK), `LlmAgent` + `MCPToolset` |
+| Reasoning | Gemini 3.5 Flash |
+| Video | Gemini 3.6 Flash, agentic video understanding over YouTube URIs |
 | Telemetry | ClickHouse Cloud via the official `mcp-clickhouse` MCP server |
-| Serving | Cloud Run |
-| Secrets | Google Secret Manager |
+| API | FastAPI, server-sent events for the agent stream |
+| Serving | Docker, deployed on Railway |
 
 No non-Google AI models, APIs, or agent frameworks are used anywhere in this
 project — including LangChain, LangGraph and CrewAI. Tool orchestration is
 ADK's own `MCPToolset`.
 
+Orchestration and video run on **separate models on purpose**. They want
+different things — one is a fast reasoner making a dozen short calls, the other
+reads video once and carefully — and the request quota is counted per model, so
+separating them also stops a long investigation from starving its own video
+reads.
+
+### Two Python environments, one image
+
+ADK's MCP integration needs protocol library `mcp` 1.x. The official ClickHouse
+MCP server needs 2.x. They are separate processes talking over stdio, so the
+conflict only exists if you insist on running both under one interpreter — and
+so the server lives in its own `.venv-mcp` (`make mcp-server`), which the
+Dockerfile reproduces as `/opt/mcp`.
+
+## How it tells the causes apart
+
+Two numbers do most of the work, and both come out of ClickHouse rather than out
+of a model.
+
+**Concentration** — a cohort's hazard rate inside the window, divided by the
+whole audience's hazard rate inside the same window. A cliff that everyone walked
+off equally is a cliff in the film. A cliff that is 4× worse on one player build
+is a cliff in the pipeline. One `ARRAY JOIN` fans each session into one row per
+dimension, so all nine dimensions are sliced in a single pass over the data.
+
+**Rebuffer lift** — rebuffering inside the window against *the same cohort's*
+rebuffering across the rest of the title. The comparison is what makes it mean
+anything: a cohort that rebuffers everywhere has a platform problem, not a cliff.
+Only a cohort that rebuffers *here specifically* explains people leaving *here
+specifically*.
+
+Delivery concentration plus rebuffer lift is a technical fault, and the agent is
+instructed never to recommend a recut for one. An audience skew with clean
+playback is localization. Flat and clean is the interesting case: telemetry has
+proven it is **not** a delivery failure and **not** an availability problem, and
+then deliberately returns `unknown` rather than guessing. Telemetry cannot tell a
+boring scene from a well-earned quiet moment. That call needs eyes on the
+footage, which is where Gemini comes in — and pretending otherwise would be the
+whole product lying.
+
 ## The demo data
 
-A public dataset of scene-level walk-outs does not exist, so `scripts/simulate.py`
-generates realistic OTT telemetry — ~14M playback heartbeats across 250,000
+A public dataset of scene-level walk-outs does not exist, so `walkout.simulation`
+generates realistic OTT telemetry — 13.1M playback heartbeats across 250,000
 sessions — with **cliffs planted at known timecodes for known reasons**:
 
 | | Window | Cause | Who |
@@ -93,43 +134,123 @@ reads YouTube URLs directly, so the film is never hosted or shipped.
 
 ```bash
 make install                  # venv + editable install
-cp .env.example .env          # then paste in your ClickHouse + Google Cloud settings
+make mcp-server               # the ClickHouse MCP server, in its own venv
+cp .env.example .env          # then paste in your ClickHouse + Gemini settings
 
 make doctor                   # verifies the connection before anything long runs
 make load                     # applies sql/schema.sql
-make simulate                 # ~14M events across 250k sessions
+make simulate                 # 13.1M events across 250k sessions (~4 min)
+```
+
+Then either watch it work:
+
+```bash
+make serve                    # the console on http://127.0.0.1:8000
+make agent                    # the same investigation, in the terminal
+```
+
+or check that it is right:
+
+```bash
+make eval                     # grade the diagnosis against planted ground truth
+make eval-mcp                 # the same grading, read through the MCP server
 make test                     # unit tests, no cluster required
 ```
+
+`make eval-mcp` matters more than it looks. It grades the pipeline over the
+*exact* path the agent uses — the official ClickHouse MCP server, not the Python
+driver — so "it works in the agent" is a measured claim rather than a hopeful
+one.
+
+## The console
+
+`make serve` puts up a page with two halves, separated on purpose.
+
+The **deterministic half** — retention curve, cliffs, cohort breakdown — is pure
+ClickHouse and answers in a couple of seconds. The page is alive and useful
+before the agent has said a word.
+
+The **agent half** streams. An investigation takes about a minute because it is
+really reading the film, and hiding that behind a spinner would waste the most
+interesting thing the product does, so every tool call is sent to the browser as
+it happens.
+
+Finished investigations are written back to `walkout.agent_reports` and replayed
+on the next page load, timestamped, with the button offering a fresh run. A full
+investigation costs about ten model calls against a per-day quota; without this
+the second person to open the page gets an error where the product should be.
 
 ## Layout
 
 ```
 src/walkout/
-  config.py       settings and credentials, resolved once
-  models.py       Cliff, CohortSignal, Diagnosis, Cause -- the shared vocabulary
-  queries.py      loads sql/queries/*.sql by name
-  clickhouse.py   client, named-query runner, segment allow-list
-  detection.py    pure logic: merging flagged buckets, cohort concentration
-  simulation.py   telemetry generator with planted ground truth
-  cli.py          entry points behind the Makefile
+  config.py         settings and credentials, resolved once
+  models.py         Cliff, CohortSignal, Diagnosis, Cause -- the shared vocabulary
+  warehouse.py      the Warehouse protocol, parameter binding, segment allow-list
+  clickhouse.py     the driver implementation, schema loading, event expansion
+  mcp_warehouse.py  the same interface over the official ClickHouse MCP server
+  queries.py        loads sql/queries/*.sql by name
+  detection.py      pure logic: merging flagged buckets, cohort concentration
+  analysis.py       cliff detection and evidence gathering -- no model involved
+  gemini.py         the shared client, with retry policy in one place
+  vision.py         Gemini reading one window of the film, cached to disk
+  reports.py        finished investigations, stored so they can be replayed
+  evaluation.py     grading against planted ground truth
+  simulation.py     telemetry generator with planted ground truth
+  cli.py            entry points behind the Makefile
+  agent/
+    agent.py        the ADK LlmAgent and its MCPToolset
+    prompts.py      the method and the evidence rules, in words
+    tools.py        find_walkouts, investigate_walkout, watch_scene
+  web/
+    app.py          FastAPI, SSE agent stream
+    static/         the console
 sql/
-  schema.sql      tables
-  queries/        one parameter-bound statement per file, reviewable on its own
-tests/            detection logic, no cluster required
+  schema.sql        tables
+  queries/          one parameter-bound statement per file, reviewable on its own
+tests/              detection, parameter binding and grading -- no cluster required
 ```
+
+Two things are worth calling out.
+
+**`warehouse.py` is an interface, not a client.** The same analysis code runs
+over the Python driver and over the MCP server without knowing which it has,
+which is what makes `make eval-mcp` a real test rather than a second
+implementation that might drift.
+
+**Queries live in `sql/`, one statement per file.** They are the part of this
+system most worth reviewing, and they are much easier to review as SQL than as
+strings concatenated inside Python. Parameters are bound through a typed
+allow-list; the only interpolation is a dimension name, checked against a fixed
+set.
+
+## Deploy
+
+The image builds both environments and runs the console:
+
+```bash
+docker build -t walkout .
+docker run --rm --env-file .env -p 8080:8000 walkout
+```
+
+`railway.json` points the platform's health check at `/api/health`, which
+actually queries ClickHouse rather than just proving the process is alive.
 
 ## Status
 
-Under construction for [Agentic Cinema: The Blockbuster Hackathon](https://agentic-cinema.devpost.com/)
+Built for [Agentic Cinema: The Blockbuster Hackathon](https://agentic-cinema.devpost.com/)
 (ClickHouse track).
 
 - [x] Telemetry schema + generator with planted ground truth
 - [x] Cliff detection: hazard baseline, binomial significance, cohort attribution
-- [ ] ADK agent + `mcp-clickhouse` toolset
-- [ ] Gemini video-window investigation
-- [ ] Diagnosis + cut-list export
-- [ ] Web UI
-- [ ] Cloud Run deploy
+- [x] ADK agent + `mcp-clickhouse` toolset
+- [x] Gemini video-window investigation
+- [x] Diagnosis with recoverable watch-hours
+- [x] Web console with streaming agent
+- [x] Container + deploy
+
+On the planted dataset the agent finds all three real cliffs, gets all three
+causes right, and ignores the decoy.
 
 ## License
 

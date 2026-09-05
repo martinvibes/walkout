@@ -953,3 +953,25 @@ a { color: inherit; }
   color: var(--ink-faint);
   line-height: 1.5;
 }
+
+/* The replayed-run note. Deliberately quiet: it is provenance, not a warning.
+   Someone opening the page should read the findings first and only then notice
+   that they were produced a few minutes ago rather than a few seconds ago. */
+.replay {
+  margin: 0 0 12px;
+  padding: 8px 12px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--ink-faint);
+  background: var(--surface-sunk);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+
+/* A run that stopped early. Warmer than the neutral note, quieter than an
+   error -- the findings above it are real, there are just fewer of them. */
+.replay.cut {
+  color: var(--cause-localization);
+  border-color: color-mix(in srgb, var(--cause-localization) 35%, var(--line));
+  background: color-mix(in srgb, var(--cause-localization) var(--tint), var(--surface));
+}

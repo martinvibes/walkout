@@ -123,18 +123,52 @@ def split_statements(sql: str) -> list[str]:
     """Split a script into executable statements.
 
     Comments are stripped *before* splitting on semicolons, not after. A prose
-    comment containing a semicolon would otherwise be cut in half, and its tail
-    parsed as SQL -- which is exactly what happened, with the error pointing at
-    a sentence fragment rather than at the comment it came from.
+    comment containing a semicolon would otherwise be cut in half and its tail
+    parsed as SQL -- which is exactly what happened once, with the error
+    pointing at a sentence fragment rather than at the comment it came from.
 
-    Statement-terminating semicolons inside string literals would still fool
-    this; the schema has none, and a real migration tool is the answer if that
-    ever changes.
+    Both comment positions count. Stripping only whole-line comments left the
+    same trap open for a trailing one (`app_version String,  -- see #12; fixed`),
+    which is a natural thing to write and would have failed the same way.
+
+    Quoting is tracked so that a `--` or a `;` inside a string literal is left
+    alone. Dollar-quoted bodies are not supported; the schema has none.
     """
-    stripped = "\n".join(
-        line for line in sql.splitlines() if not line.strip().startswith("--")
-    )
-    return [chunk.strip() for chunk in stripped.split(";") if chunk.strip()]
+    out: list[str] = []
+    current: list[str] = []
+    quote = ""
+    index = 0
+
+    while index < len(sql):
+        char = sql[index]
+
+        if quote:
+            current.append(char)
+            if char == "\\" and index + 1 < len(sql):      # escaped, not a close
+                current.append(sql[index + 1])
+                index += 2
+                continue
+            if char == quote:
+                quote = ""
+            index += 1
+            continue
+
+        if char in "'\"`":
+            quote = char
+            current.append(char)
+        elif sql.startswith("--", index):
+            newline = sql.find("\n", index)
+            index = len(sql) if newline == -1 else newline
+            continue
+        elif char == ";":
+            out.append("".join(current))
+            current = []
+        else:
+            current.append(char)
+        index += 1
+
+    out.append("".join(current))
+    return [statement.strip() for statement in out if statement.strip()]
 
 
 def expand_events(client: Client, title_id: str, bucket_sec: int,

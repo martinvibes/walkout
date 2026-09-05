@@ -177,6 +177,64 @@ async function selectTitle(titleId) {
   } catch (err) {
     $("#cliffs").innerHTML = `<div class="banner err">Could not reach the warehouse. ${escapeHtml(err.message)}</div>`;
   }
+  loadLastReport(titleId);
+}
+
+/* ClickHouse hands back "2026-09-05 12:34:56.789" with no zone marker, which
+   Date() would read as local time and get wrong by however many hours you are
+   from UTC. It is UTC; say so. */
+function parseUtc(stamp) {
+  return new Date(stamp.replace(" ", "T").replace(/(\.\d+)?$/, "$1Z"));
+}
+
+function timeAgo(stamp) {
+  const seconds = Math.max(0, (Date.now() - parseUtc(stamp)) / 1000);
+  if (seconds < 90) return "just now";
+  const steps = [[60, "minute"], [60, "hour"], [24, "day"]];
+  let value = seconds / 60, unit = "minute";
+  for (const [size, next] of steps.slice(1)) {
+    if (value < size) break;
+    value /= size; unit = next;
+  }
+  const rounded = Math.round(value);
+  return `${rounded} ${unit}${rounded === 1 ? "" : "s"} ago`;
+}
+
+/* Replay the last investigation instead of running a new one.
+
+   A full run costs about ten model calls against a daily quota, so the second
+   person to open the page today would otherwise get an error where the product
+   should be. The findings are stored in ClickHouse when the run finishes; this
+   puts them straight back on screen, timestamped, with the button offering a
+   fresh run to anyone who wants one. */
+async function loadLastReport(titleId) {
+  let report;
+  try {
+    report = await getJson(`/api/agent/${titleId}/last`);
+  } catch {
+    return;                       // no cached run is a normal state, not a fault
+  }
+  if (!report || !report.report || state.running || state.titleId !== titleId) return;
+
+  const trace = $("#trace");
+  trace.innerHTML = "";
+  for (const call of report.trace || []) addStep(call.name, call.args).className = "step done";
+
+  const verdict = $("#verdict");
+  verdict.hidden = false;
+  verdict.innerHTML = markdown(report.report);
+  verdict.scrollTop = 0;
+
+  const note = $("#replay");
+  note.classList.toggle("cut", !report.complete);
+  note.innerHTML = report.complete
+    ? `Showing the last investigation, run ${escapeHtml(timeAgo(report.created_at))}` +
+      ` in ${(report.duration_ms / 1000).toFixed(0)}s.`
+    : `Showing the last investigation, run ${escapeHtml(timeAgo(report.created_at))}.` +
+      ` It was cut short before the agent finished writing, so the findings below` +
+      ` may stop mid-sentence.`;
+  note.hidden = false;
+  $("#run").innerHTML = 'Run it again <span class="arrow">→</span>';
 }
 
 function showSkeletons() {
@@ -466,6 +524,7 @@ function runAgent() {
   const verdict = $("#verdict");
   verdict.hidden = true;
   verdict.innerHTML = "";
+  $("#replay").hidden = true;
 
   let answer = "";
   const opening = addStep("__opening", null);
