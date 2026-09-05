@@ -17,10 +17,9 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from clickhouse_connect.driver.client import Client
 
-from .clickhouse import run_named
 from .detection import is_concentrated, merge_cliffs, rank_cohorts
+from .warehouse import Warehouse
 from .models import Cause, Cliff, CohortSignal
 
 # Dimensions that describe *how* the video was delivered. Concentration here
@@ -77,7 +76,7 @@ class Investigation:
 
 
 def find_cliffs(
-    client: Client,
+    warehouse: Warehouse,
     title_id: str,
     credits_sec: int | None = None,
     bucket_sec: int = 10,
@@ -94,9 +93,8 @@ def find_cliffs(
     and reporting that would bury three real findings under one meaningless one.
     """
     if credits_sec is None:
-        credits_sec = title_credits_start(client, title_id)
-    rows = run_named(
-        client,
+        credits_sec = title_credits_start(warehouse, title_id)
+    rows = warehouse.run_named(
         "detect_cliffs",
         dict(
             title_id=title_id,
@@ -111,9 +109,10 @@ def find_cliffs(
     return merge_cliffs(rows, bucket_sec=bucket_sec, max_gap_sec=max_gap_sec)
 
 
-def title_credits_start(client: Client, title_id: str) -> int:
+def title_credits_start(warehouse: Warehouse, title_id: str) -> int:
     """Where the end credits begin, or the full runtime if unknown."""
-    rows = run_named(client, "title", dict(title_id=title_id))
+    rows = warehouse.run_named(
+        "title", dict(title_id=title_id))
     if not rows:
         raise LookupError(f"no title {title_id!r} in walkout.titles")
     row = rows[0]
@@ -121,7 +120,7 @@ def title_credits_start(client: Client, title_id: str) -> int:
 
 
 def investigate(
-    client: Client,
+    warehouse: Warehouse,
     title_id: str,
     cliff: Cliff,
     dimensions: tuple[str, ...] = DEFAULT_DIMENSIONS,
@@ -132,9 +131,8 @@ def investigate(
     result = Investigation(cliff=cliff)
 
     for dim in dimensions:
-        rows = run_named(
-            client,
-            "segment_cliff",
+        rows = warehouse.run_named(
+        "segment_cliff",
             dict(
                 title_id=title_id,
                 dim=dim,
@@ -147,14 +145,14 @@ def investigate(
             rows, dim, overall_hazard=cliff.hazard, min_concentration=CONCENTRATION_FLOOR
         )
 
-    _measure_playback(client, title_id, cliff, bucket_sec, result)
+    _measure_playback(warehouse, title_id, cliff, bucket_sec, result)
     result.evidence = _describe(result)
     result.proposed_cause = _propose(result)
     return result
 
 
 def _measure_playback(
-    client: Client, title_id: str, cliff: Cliff, bucket_sec: int, result: Investigation
+    warehouse: Warehouse, title_id: str, cliff: Cliff, bucket_sec: int, result: Investigation
 ) -> None:
     """Compare rebuffering inside the window against the same cohorts' own
     behaviour across the whole title.
@@ -163,8 +161,7 @@ def _measure_playback(
     everywhere has a platform problem, not a cliff; only a cohort that
     rebuffers *here specifically* explains people leaving here specifically.
     """
-    window = run_named(
-        client,
+    window = warehouse.run_named(
         "qoe_at_window",
         dict(
             title_id=title_id,
@@ -179,7 +176,8 @@ def _measure_playback(
 
     baseline = {
         row["cohort"]: float(row["rebuffer_event_rate"])
-        for row in run_named(client, "qoe_baseline", dict(title_id=title_id, dim="app_version"))
+        for row in warehouse.run_named(
+        "qoe_baseline", dict(title_id=title_id, dim="app_version"))
     }
 
     worst = max(window, key=lambda r: float(r["rebuffer_ratio"]))

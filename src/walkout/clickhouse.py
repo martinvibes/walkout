@@ -110,6 +110,21 @@ def run_named(client: Client, name: str, params: dict[str, Any]) -> list[dict[st
     return [dict(zip(result.column_names, row)) for row in result.result_rows]
 
 
+class DirectWarehouse:
+    """A Warehouse backed by the ClickHouse HTTP driver.
+
+    Used by the loader and by the evaluation harness. The agent uses
+    McpWarehouse instead -- same queries, same parameters, routed through the
+    official ClickHouse MCP server.
+    """
+
+    def __init__(self, client: Client | None = None) -> None:
+        self.client = client if client is not None else connect()
+
+    def run_named(self, name: str, params: dict[str, Any]) -> list[dict[str, Any]]:
+        return run_named(self.client, name, params)
+
+
 def split_statements(sql: str) -> list[str]:
     """Split a script into executable statements.
 

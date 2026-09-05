@@ -20,9 +20,9 @@ import json
 from dataclasses import dataclass, field
 from typing import Any
 
-from clickhouse_connect.driver.client import Client
 
 from .analysis import find_cliffs, investigate
+from .warehouse import Warehouse
 from .config import DATA_DIR
 from .models import Cause, Cliff
 
@@ -81,7 +81,7 @@ ACCEPTABLE = {
 }
 
 
-def evaluate(client: Client, title_id: str = "sintel") -> Report:
+def evaluate(warehouse: Warehouse, title_id: str = "sintel") -> Report:
     """Run detection and investigation, then grade both against ground truth."""
     import time
 
@@ -89,7 +89,7 @@ def evaluate(client: Client, title_id: str = "sintel") -> Report:
     planted = truth["cliffs"]
 
     started = time.perf_counter()
-    cliffs = find_cliffs(client, title_id)
+    cliffs = find_cliffs(warehouse, title_id)
     report = Report(detect_ms=(time.perf_counter() - started) * 1000)
 
     matched: set[int] = set()
@@ -110,7 +110,7 @@ def evaluate(client: Client, title_id: str = "sintel") -> Report:
             matched.add(index)
             grade.found_window = cliff.timecode_range
             if grade.should_report:
-                proposed = investigate(client, title_id, cliff).proposed_cause
+                proposed = investigate(warehouse, title_id, cliff).proposed_cause
                 grade.proposed_cause = proposed.value
                 grade.cause_correct = proposed in ACCEPTABLE[spec["cause"]]
         report.grades.append(grade)

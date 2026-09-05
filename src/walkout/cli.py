@@ -100,15 +100,33 @@ def simulate(argv: list[str] | None = None) -> int:
 
 
 def evaluate(argv: list[str] | None = None) -> int:
-    """Grade the pipeline against the planted ground truth."""
+    """Grade the pipeline against the planted ground truth.
+
+    `--mcp` grades over the same path the agent uses, through the official
+    ClickHouse MCP server, so "it works in the agent" is a measured claim
+    rather than a hopeful one.
+    """
     from .evaluation import evaluate as run, render
 
+    parser = argparse.ArgumentParser(prog="walkout-eval")
+    parser.add_argument(
+        "--mcp", action="store_true",
+        help="read through the ClickHouse MCP server instead of the driver",
+    )
+    args = parser.parse_args(argv)
+
     try:
-        client = ch.connect()
+        if args.mcp:
+            from .mcp_warehouse import McpWarehouse
+
+            warehouse = McpWarehouse()
+        else:
+            warehouse = ch.DirectWarehouse()
     except ConfigError as exc:
         print(f"config: {exc}", file=sys.stderr)
         return 2
-    report = run(client)
+    print(f"reading via: {'clickhouse mcp server' if args.mcp else 'clickhouse driver'}")
+    report = run(warehouse)
     print(render(report))
     return 0 if report.passed else 1
 
