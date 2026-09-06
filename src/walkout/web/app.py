@@ -310,6 +310,12 @@ def index() -> FileResponse:
     return FileResponse(STATIC_DIR / "index.html")
 
 
+@app.get("/docs")
+def docs() -> FileResponse:
+    """The written explanation. `/api/docs` is the generated API reference."""
+    return FileResponse(STATIC_DIR / "docs.html")
+
+
 def serve() -> int:
     """`walkout-serve` -- run the app.
 

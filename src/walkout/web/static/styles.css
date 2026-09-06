@@ -17,8 +17,8 @@
   --line:          #E6E5E1;
   --line-strong:   #D4D3CE;
   --ink:           #12120F;
-  --ink-soft:      #55554E;
-  --ink-faint:     #8A8A82;
+  --ink-soft:      #4A4A44;
+  --ink-faint:     #6E6E66;
 
   --brand:         #12120F;
   --on-brand:      #FBFBFA;
@@ -58,8 +58,8 @@
   --line:          #1F1F25;
   --line-strong:   #2E2E36;
   --ink:           #F4F4F2;
-  --ink-soft:      #A1A1AA;
-  --ink-faint:     #6B6B75;
+  --ink-soft:      #ADADB8;
+  --ink-faint:     #8E8E99;
 
   --brand:         #F4F4F2;
   --on-brand:      #08080A;
@@ -119,7 +119,7 @@ a { color: inherit; }
 
 .eyebrow {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12.5px;
   font-weight: 500;
   letter-spacing: .16em;
   text-transform: uppercase;
@@ -392,7 +392,7 @@ a { color: inherit; }
 
 .chip {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
   letter-spacing: .02em;
   padding: 9px 15px;
   border-radius: var(--radius-pill);
@@ -424,7 +424,7 @@ a { color: inherit; }
 
 .stat .k {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: .14em;
   text-transform: uppercase;
   color: var(--ink-faint);
@@ -503,7 +503,7 @@ a { color: inherit; }
   gap: 18px;
   flex-wrap: wrap;
   padding: 14px 2px 12px;
-  font-size: 12px;
+  font-size: 13px;
   color: var(--ink-faint);
   font-family: var(--mono);
   letter-spacing: .03em;
@@ -569,7 +569,7 @@ a { color: inherit; }
 
 .cliff-lift {
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 12.5px;
   padding: 3px 9px;
   border-radius: var(--radius-pill);
   background: color-mix(in srgb, var(--danger) 12%, transparent);
@@ -583,7 +583,7 @@ a { color: inherit; }
 
 .cause-tag {
   font-family: var(--mono);
-  font-size: 10px;
+  font-size: 11.5px;
   letter-spacing: .14em;
   text-transform: uppercase;
   padding: 4px 10px;
@@ -644,7 +644,7 @@ a { color: inherit; }
   grid-template-columns: minmax(0, 1fr) 62px;
   align-items: center;
   gap: 12px;
-  font-size: 12.5px;
+  font-size: 13.5px;
 }
 
 .cohort .label { color: var(--ink-soft); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -669,7 +669,7 @@ a { color: inherit; }
 
 .cohort .x {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
   text-align: right;
   color: var(--tone);
   font-weight: 600;
@@ -765,7 +765,7 @@ a { color: inherit; }
 .step.done .dot { border-color: var(--ink-faint); background: var(--ink-faint); }
 
 .step .what { font-size: 13.5px; font-weight: 500; letter-spacing: -.01em; }
-.step .detail { font-family: var(--mono); font-size: 11px; color: var(--ink-faint); margin-top: 2px; word-break: break-word; }
+.step .detail { font-family: var(--mono); font-size: 12.5px; color: var(--ink-faint); margin-top: 2px; word-break: break-word; }
 
 .verdict {
   border-top: 1px solid var(--line);
@@ -783,12 +783,12 @@ a { color: inherit; }
 .verdict ul { margin: 0 0 10px; padding-left: 18px; }
 .verdict li { margin-bottom: 5px; }
 .verdict hr { border: 0; border-top: 1px solid var(--line); margin: 14px 0; }
-.verdict code { font-family: var(--mono); font-size: 12.5px; background: var(--surface-sunk); padding: 1px 5px; border-radius: 5px; }
+.verdict code { font-family: var(--mono); font-size: 13.5px; background: var(--surface-sunk); padding: 1px 5px; border-radius: 5px; }
 
 .banner {
   padding: 11px 14px;
   border-radius: var(--radius);
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.5;
   border: 1px solid;
 }
@@ -821,7 +821,7 @@ a { color: inherit; }
 
 .how-card .n {
   font-family: var(--mono);
-  font-size: 11px;
+  font-size: 12.5px;
   color: var(--ink-faint);
   letter-spacing: .16em;
 }
@@ -838,7 +838,7 @@ a { color: inherit; }
 
 .stack span {
   font-family: var(--mono);
-  font-size: 11.5px;
+  font-size: 12.5px;
   padding: 7px 13px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--line);
@@ -908,7 +908,7 @@ a { color: inherit; }
 }
 
 .preview-head h3 { font-size: 16px; margin-top: 8px; letter-spacing: -.025em; }
-.preview-count { font-size: 11px; color: var(--ink-faint); white-space: nowrap; padding-top: 4px; }
+.preview-count { font-size: 12.5px; color: var(--ink-faint); white-space: nowrap; padding-top: 4px; }
 
 .preview-rows { display: flex; flex-direction: column; }
 
@@ -931,7 +931,7 @@ a { color: inherit; }
 .preview-row .tc { font-family: var(--mono); font-size: 13px; font-weight: 500; }
 
 .preview-row .verdictline {
-  font-size: 12.5px;
+  font-size: 13.5px;
   color: var(--ink-soft);
   white-space: nowrap;
   overflow: hidden;
@@ -940,7 +940,7 @@ a { color: inherit; }
 
 .preview-row .hrs {
   font-family: var(--mono);
-  font-size: 12px;
+  font-size: 13px;
   color: var(--ink-faint);
   white-space: nowrap;
 }
@@ -949,7 +949,7 @@ a { color: inherit; }
 
 .preview-foot {
   margin-top: 16px;
-  font-size: 11.5px;
+  font-size: 12.5px;
   color: var(--ink-faint);
   line-height: 1.5;
 }
@@ -960,7 +960,7 @@ a { color: inherit; }
 .replay {
   margin: 0 0 12px;
   padding: 8px 12px;
-  font-size: 12.5px;
+  font-size: 13.5px;
   line-height: 1.5;
   color: var(--ink-faint);
   background: var(--surface-sunk);
@@ -1053,7 +1053,7 @@ a { color: inherit; }
   flex-wrap: wrap;
   margin-top: 12px;
 }
-.player-bar > .mono { font-size: 12px; color: var(--ink-faint); }
+.player-bar > .mono { font-size: 13px; color: var(--ink-faint); }
 
 .jumps { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
 
@@ -1065,7 +1065,7 @@ a { color: inherit; }
   border-radius: var(--radius-pill);
   background: var(--surface);
   color: var(--ink-soft);
-  font: 500 12px/1 var(--mono);
+  font: 500 13px/1 var(--mono);
   cursor: pointer;
   transition: background .18s var(--ease-soft), color .18s var(--ease-soft),
               border-color .18s var(--ease-soft), transform .18s var(--ease);
@@ -1097,7 +1097,7 @@ a { color: inherit; }
 }
 .read-head h4 { margin: 0; font-size: 16px; }
 
-.read-window { margin: 10px 0 14px; font-size: 12.5px; color: var(--ink-faint); }
+.read-window { margin: 10px 0 14px; font-size: 13.5px; color: var(--ink-faint); }
 .read-window .mono { color: var(--ink-soft); }
 
 .read-body { flex: 1; overflow-y: auto; max-height: 380px; }
@@ -1116,7 +1116,7 @@ a { color: inherit; }
   border-radius: var(--radius-pill);
   background: var(--surface-sunk);
   border: 1px solid var(--line);
-  font: 500 11.5px/1 var(--sans);
+  font: 500 12.5px/1 var(--sans);
   color: var(--ink-soft);
 }
 .read-tag b { color: var(--ink); font-weight: 600; }
@@ -1124,7 +1124,7 @@ a { color: inherit; }
 .read-section { margin-bottom: 15px; }
 .read-section h5 {
   margin: 0 0 7px;
-  font: 600 11px/1 var(--sans);
+  font: 600 12.5px/1 var(--sans);
   letter-spacing: .08em;
   text-transform: uppercase;
   color: var(--ink-faint);
@@ -1140,7 +1140,7 @@ a { color: inherit; }
 /* Beats are the model showing its working: a timecode next to what it saw
    there. Monospaced so the times line up and read as evidence. */
 .beat { display: flex; gap: 11px; margin-bottom: 7px; align-items: baseline; }
-.beat time { flex: none; font: 500 11.5px/1.5 var(--mono); color: var(--ink-faint); }
+.beat time { flex: none; font: 500 12.5px/1.5 var(--mono); color: var(--ink-faint); }
 .beat span { font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); }
 
 .btn.ghost {
@@ -1172,3 +1172,108 @@ a { color: inherit; }
   border-top: 1px solid var(--line);
 }
 .how-foot b { color: var(--ink-soft); font-weight: 600; }
+
+/* ===========================================================================
+   Waiting for the model
+   ===========================================================================
+   Reading video takes ten to twenty seconds. A line of text saying so leaves
+   the panel looking broken for all of it, so the panel instead shows the shape
+   of the answer it is about to hold -- a synopsis block, some tags, a few
+   beats. The wait then reads as the thing filling in rather than as nothing
+   happening, and there is no layout jump when it does. */
+
+/* row-in is a to-only keyframe and assumes the element starts hidden, so this
+   gets its own pair rather than borrowing one that would quietly do nothing. */
+.watching { animation: watch-in .32s var(--ease) both; }
+@keyframes watch-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.watching-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+/* A frame of film advancing: four sprockets, lit in sequence. */
+.reel { display: flex; gap: 4px; }
+.reel i {
+  width: 7px;
+  height: 12px;
+  border-radius: 2px;
+  background: var(--line-strong);
+  animation: reel 1.1s var(--ease-soft) infinite;
+}
+.reel i:nth-child(2) { animation-delay: .13s; }
+.reel i:nth-child(3) { animation-delay: .26s; }
+.reel i:nth-child(4) { animation-delay: .39s; }
+
+@keyframes reel {
+  0%, 65%, 100% { background: var(--line-strong); transform: scaleY(.72); }
+  30%           { background: var(--ink);         transform: scaleY(1); }
+}
+
+.ghost-line {
+  height: 11px;
+  border-radius: 5px;
+  margin-bottom: 9px;
+  background: linear-gradient(
+    90deg,
+    var(--surface-sunk) 0%,
+    color-mix(in srgb, var(--ink) 9%, var(--surface-sunk)) 50%,
+    var(--surface-sunk) 100%);
+  background-size: 220% 100%;
+  animation: sweep 1.5s linear infinite;
+}
+.ghost-line.short { width: 58%; }
+.ghost-line.tag   { display: inline-block; width: 84px; height: 24px; border-radius: 999px; margin-right: 7px; }
+
+@keyframes sweep {
+  from { background-position: 120% 0; }
+  to   { background-position: -120% 0; }
+}
+
+/* The counter is the honest part: it says the wait is real and how long it has
+   been, which is far less unnerving than an indicator that could mean anything. */
+.watching-secs {
+  margin-left: auto;
+  font: 500 12.5px/1 var(--mono);
+  color: var(--ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reel i, .ghost-line { animation: none; }
+  .reel i:nth-child(odd) { background: var(--ink); }
+}
+
+/* The way out of the summary and into the long version, placed where someone
+   has just finished the summary and is deciding whether they want more. */
+.how-more {
+  display: flex;
+  gap: 16px;
+  align-items: baseline;
+  flex-wrap: wrap;
+  margin: 22px 0 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-faint);
+}
+.how-more a {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--ink);
+  font-weight: 600;
+  text-decoration: none;
+  border-bottom: 1px solid var(--line-strong);
+  padding-bottom: 2px;
+  transition: border-color .18s var(--ease-soft);
+}
+.how-more a:hover { border-bottom-color: var(--ink); }
+.how-more span { max-width: 56ch; }

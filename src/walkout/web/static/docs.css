@@ -1,0 +1,327 @@
+/* ===========================================================================
+   Documentation
+   ===========================================================================
+   A reading page, not a dashboard. Measure is capped near 70 characters, the
+   contents rail stays put so you always know where you are in a long document,
+   and every colour comes from the shared tokens so both themes work here for
+   free.
+   =========================================================================== */
+
+.docs {
+  display: grid;
+  grid-template-columns: 210px minmax(0, 1fr);
+  gap: 56px;
+  align-items: start;
+  padding-top: 118px;
+  padding-bottom: 96px;
+}
+
+@media (max-width: 900px) {
+  .docs { grid-template-columns: 1fr; gap: 28px; padding-top: 96px; }
+}
+
+/* --- contents ------------------------------------------------------------ */
+
+.toc { position: sticky; top: 96px; }
+@media (max-width: 900px) { .toc { position: static; } }
+
+.toc-label {
+  margin: 0 0 12px;
+  font: 600 12px/1 var(--sans);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.toc nav { display: flex; flex-direction: column; border-left: 1px solid var(--line); }
+
+.toc a {
+  padding: 7px 0 7px 15px;
+  margin-left: -1px;
+  border-left: 2px solid transparent;
+  font-size: 13.5px;
+  line-height: 1.4;
+  color: var(--ink-faint);
+  text-decoration: none;
+  transition: color .18s var(--ease-soft), border-color .18s var(--ease-soft);
+}
+.toc a:hover { color: var(--ink); }
+
+/* Set by docs.js as you scroll, so the rail answers "where am I" without
+   anyone having to look at the scrollbar. */
+.toc a.active {
+  color: var(--ink);
+  border-left-color: var(--ink);
+  font-weight: 600;
+}
+
+@media (max-width: 900px) {
+  .toc nav { flex-direction: row; flex-wrap: wrap; gap: 4px; border-left: 0; }
+  .toc a { padding: 6px 11px; border: 1px solid var(--line); border-radius: var(--radius-pill); }
+  .toc a.active { border-color: var(--ink); }
+}
+
+/* --- body ---------------------------------------------------------------- */
+
+.doc-body { max-width: 74ch; }
+
+.doc-head { padding-bottom: 34px; border-bottom: 1px solid var(--line); margin-bottom: 10px; }
+
+.doc-head h1 {
+  margin: 14px 0 0;
+  font-size: clamp(38px, 5vw, 58px);
+  letter-spacing: -.035em;
+  line-height: 1;
+}
+
+.doc-lede {
+  margin: 20px 0 0;
+  font-size: 17.5px;
+  line-height: 1.62;
+  color: var(--ink-soft);
+}
+.doc-lede b { color: var(--ink); font-weight: 600; }
+
+.doc-body section { padding-top: 46px; scroll-margin-top: 92px; }
+
+.doc-body h2 {
+  margin: 0 0 16px;
+  font-size: clamp(24px, 2.6vw, 31px);
+  letter-spacing: -.025em;
+}
+
+.doc-body h3 {
+  margin: 30px 0 10px;
+  font-size: 17.5px;
+  letter-spacing: -.012em;
+}
+
+.doc-body h4 { margin: 0 0 7px; font-size: 16px; letter-spacing: -.01em; }
+
+.doc-body p {
+  margin: 0 0 15px;
+  font-size: 15.5px;
+  line-height: 1.68;
+  color: var(--ink-soft);
+}
+.doc-body p b, .doc-body li b { color: var(--ink); font-weight: 600; }
+.doc-body i { font-style: italic; }
+
+.doc-body a { color: var(--ink); text-decoration: underline; text-underline-offset: 3px; }
+.doc-body a:hover { text-decoration-thickness: 2px; }
+
+.doc-body code {
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: var(--surface-sunk);
+  border: 1px solid var(--line);
+  font: 500 13px/1.4 var(--mono);
+  color: var(--ink);
+}
+
+.doc-body pre {
+  margin: 18px 0;
+  padding: 18px 20px;
+  overflow-x: auto;
+  background: var(--surface-sunk);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+.doc-body pre code {
+  padding: 0;
+  border: 0;
+  background: none;
+  font-size: 13px;
+  line-height: 1.75;
+  color: var(--ink-soft);
+  white-space: pre;
+}
+
+/* --- lists --------------------------------------------------------------- */
+
+ol.steps { margin: 4px 0 15px; padding: 0; list-style: none; counter-reset: step; }
+
+ol.steps li {
+  position: relative;
+  counter-increment: step;
+  padding-left: 42px;
+  margin-bottom: 15px;
+  font-size: 15.5px;
+  line-height: 1.68;
+  color: var(--ink-soft);
+}
+
+ol.steps li::before {
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: 1px;
+  display: grid;
+  place-items: center;
+  width: 27px;
+  height: 27px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunk);
+  border: 1px solid var(--line-strong);
+  font: 600 13px/1 var(--mono);
+  color: var(--ink-soft);
+}
+
+ol.steps.big li { margin-bottom: 24px; }
+ol.steps.big li::before { background: var(--brand); border-color: var(--brand); color: var(--on-brand); }
+
+ul.plain { margin: 4px 0 15px; padding: 0; list-style: none; }
+ul.plain li {
+  padding: 0 0 14px 20px;
+  position: relative;
+  font-size: 15.5px;
+  line-height: 1.68;
+  color: var(--ink-soft);
+}
+ul.plain li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 11px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--line-strong);
+}
+
+/* --- the two failure modes, side by side --------------------------------- */
+
+.two-up {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+  margin: 20px 0 22px;
+}
+
+.panel {
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+.panel p { margin: 0; font-size: 14.5px; }
+
+.panel-tag {
+  display: inline-block;
+  margin-bottom: 10px;
+  padding: 5px 11px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--tag) var(--tint), var(--surface));
+  color: var(--tag);
+  border: 1px solid color-mix(in srgb, var(--tag) 30%, transparent);
+  font: 600 12.5px/1 var(--sans);
+}
+
+/* --- callout ------------------------------------------------------------- */
+
+.callout {
+  margin: 20px 0 !important;
+  padding: 15px 18px;
+  border-left: 3px solid var(--ink);
+  border-radius: 0 var(--radius) var(--radius) 0;
+  background: var(--surface-sunk);
+  font-size: 15px !important;
+  color: var(--ink-soft);
+}
+
+/* --- tables -------------------------------------------------------------- */
+
+.rules-table {
+  width: 100%;
+  margin: 18px 0 22px;
+  border-collapse: collapse;
+  font-size: 14.5px;
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+}
+
+@media (min-width: 720px) {
+  .rules-table { display: table; white-space: normal; }
+}
+
+.rules-table th {
+  padding: 10px 14px 10px 0;
+  text-align: left;
+  border-bottom: 1px solid var(--line-strong);
+  font: 600 12.5px/1.4 var(--sans);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.rules-table td {
+  padding: 13px 14px 13px 0;
+  border-bottom: 1px solid var(--line);
+  line-height: 1.6;
+  color: var(--ink-soft);
+  vertical-align: top;
+}
+.rules-table tr:last-child td { border-bottom: 0; }
+.rules-table td.mono { font: 500 13.5px/1.6 var(--mono); color: var(--ink); }
+
+.rules-table .v {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--tag) var(--tint), var(--surface));
+  color: var(--tag);
+  border: 1px solid color-mix(in srgb, var(--tag) 30%, transparent);
+  font: 600 12.5px/1 var(--sans);
+  white-space: nowrap;
+}
+
+/* --- the console walkthrough --------------------------------------------- */
+
+.guide { margin-top: 20px; }
+
+.guide-row {
+  display: flex;
+  gap: 16px;
+  padding-bottom: 22px;
+  margin-bottom: 22px;
+  border-bottom: 1px solid var(--line);
+}
+.guide-row:last-child { border-bottom: 0; margin-bottom: 0; padding-bottom: 0; }
+.guide-row p:last-child { margin-bottom: 0; }
+.guide-row p { font-size: 15px; }
+
+.guide-n {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  background: var(--brand);
+  color: var(--on-brand);
+  font: 600 14px/1 var(--mono);
+}
+
+/* --- questions ----------------------------------------------------------- */
+
+.qa {
+  padding: 18px 0;
+  border-bottom: 1px solid var(--line);
+}
+.qa:last-of-type { border-bottom: 0; }
+.qa h4 { margin-bottom: 9px; font-size: 16.5px; }
+.qa p { margin: 0; font-size: 15px; }
+
+/* --- footer -------------------------------------------------------------- */
+
+.doc-foot {
+  margin-top: 56px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+.doc-foot p { margin: 0; font-size: 13.5px; color: var(--ink-faint); }
+
+/* --- nav ----------------------------------------------------------------- */
+
+.nav-links a.here { color: var(--ink); font-weight: 600; }

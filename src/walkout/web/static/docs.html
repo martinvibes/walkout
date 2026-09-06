@@ -1,0 +1,534 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Walkout — documentation</title>
+<meta name="description" content="What Walkout is, who it is for, what it needs to run, and how it decides why an audience stopped watching.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/styles.css">
+<link rel="stylesheet" href="/static/docs.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📉</text></svg>">
+</head>
+<body>
+
+<nav class="nav" id="nav">
+  <div class="shell">
+    <a class="brand" href="/">
+      <span class="mark" aria-hidden="true">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M1 3v10h10"/><path d="M3.5 9.5 6 7l2 2 4.5-5.5"/>
+        </svg>
+      </span>
+      <span>Walkout<span class="sub">Retention Forensics</span></span>
+    </a>
+
+    <div class="nav-links">
+      <a href="/#console">Console</a>
+      <a href="/docs" class="here">Docs</a>
+      <a href="/api/docs">API</a>
+    </div>
+
+    <div class="nav-right">
+      <button class="icon-btn" id="theme" aria-label="Switch theme" title="Switch theme">
+        <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+      <a class="btn" href="https://github.com/martinvibes/walkout" target="_blank" rel="noopener">
+        GitHub <span class="arrow">→</span>
+      </a>
+    </div>
+  </div>
+</nav>
+
+<div class="docs shell">
+
+  <aside class="toc" id="toc">
+    <p class="toc-label">On this page</p>
+    <nav>
+      <a href="#what">What Walkout is</a>
+      <a href="#who">Who it is for</a>
+      <a href="#needs">What it needs to run</a>
+      <a href="#cannot">What it cannot do</a>
+      <a href="#method">How it works</a>
+      <a href="#rules">How it decides</a>
+      <a href="#console-guide">Reading the console</a>
+      <a href="#agent">The agent</a>
+      <a href="#data">The demo data</a>
+      <a href="#stack">What it is built on</a>
+      <a href="#run">Running it yourself</a>
+      <a href="#limits">Limits and honesty</a>
+      <a href="#faq">Questions</a>
+    </nav>
+  </aside>
+
+  <main class="doc-body">
+
+    <header class="doc-head">
+      <span class="eyebrow static">Documentation</span>
+      <h1>Walkout</h1>
+      <p class="doc-lede">
+        Every platform knows <b>when</b> viewers stop watching. None of them know <b>why</b>.
+        Walkout is an agent that answers the second question, by putting two witnesses in the
+        same room: the telemetry, which saw the audience but never the film, and a model that
+        watches the film but has never seen the audience.
+      </p>
+    </header>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section id="what">
+      <h2>What Walkout is</h2>
+      <p>
+        A retention chart tells you that 18% of your audience left at 04:08. It does not tell
+        you what happened at 04:08. Today the answer is an analyst scrubbing to a timestamp
+        and guessing, and the guess is often wrong, because two completely different failures
+        make the same shape on a chart:
+      </p>
+
+      <div class="two-up">
+        <div class="panel">
+          <span class="panel-tag" style="--tag:var(--cause-pacing)">The scene isn't working</span>
+          <p>A sequence drags, a subplot loses people, a joke lands wrong. The fix is an edit.
+             Everyone leaves at roughly the same rate, and playback is perfectly healthy.</p>
+        </div>
+        <div class="panel">
+          <span class="panel-tag" style="--tag:var(--cause-technical)">The stream is broken</span>
+          <p>One app build stutters, one CDN region degrades. The fix is an engineering ticket.
+             The film is fine. Recutting it would be worse than doing nothing.</p>
+        </div>
+      </div>
+
+      <p>
+        Get that backwards and you either recut a scene that was fine or ship a broken stream
+        to everyone. Walkout tells them apart, and says which one it is in plain language,
+        addressed to whoever owns the fix.
+      </p>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section id="who">
+      <h2>Who it is for</h2>
+      <p>
+        A company that streams video and owns its viewing data: a streaming service, a sports
+        app, a broadcaster's catch-up platform, a training or course platform. The person
+        using it sits on the content or operations team.
+      </p>
+      <p>
+        Their job today is to look at a chart, scrub to a timestamp, and form an opinion.
+        Walkout replaces the opinion with evidence, and does it for every cliff in the title
+        at once rather than the one someone happened to notice.
+      </p>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section id="needs">
+      <h2>What it needs to run</h2>
+      <p>Two things, and only two.</p>
+
+      <ol class="steps">
+        <li>
+          <b>Playback telemetry.</b> The stream of events a player already emits — started,
+          still watching at 04:08, buffered, quit — one row per viewer per ten seconds. This
+          is the same data behind any retention chart, so a platform that can draw one already
+          has it. Walkout reads it from ClickHouse.
+        </li>
+        <li>
+          <b>A link to the film.</b> A URL the model can watch. In this demo that is a YouTube
+          link; the film is never copied, hosted, or uploaded anywhere.
+        </li>
+      </ol>
+
+      <p class="callout">
+        The telemetry is the part that cannot be substituted. Where an audience left is not
+        information that exists in the picture — it exists only in the audience.
+      </p>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section id="cannot">
+      <h2>What it cannot do</h2>
+      <p>
+        <b>It cannot take a bare video URL and tell you where viewers stopped watching.</b>
+        This comes up often enough to state plainly.
+      </p>
+      <p>
+        Finding a walk-out requires knowing what millions of viewers did. A model watching a
+        film can tell you a scene is slow; it cannot tell you that 6,602 people quit during
+        it, or that 4,719 of them were on one Android build. Nothing in the footage records
+        that. If someone offers you a tool that finds retention cliffs from a URL alone, it is
+        guessing which parts of the video <i>seem</i> boring, which is a different product and
+        a much weaker one.
+      </p>
+      <p>
+        What Walkout does with the URL is the other half: once the telemetry has named the
+        exact seconds worth looking at, the model goes and looks at them.
+      </p>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section id="method">
+      <h2>How it works</h2>
+
+      <ol class="steps big">
+        <li>
+          <b>Find where they left.</b>
+          Every play, pause and quit from every viewer, read as a survival curve. For each
+          ten-second bucket Walkout measures the share of people <i>still watching</i> who quit
+          there, and compares it against what this title normally loses. Every film has a slow
+          leak; only the cliffs are interesting. Someone who watched to the end is not counted
+          as having left, and the end credits are excluded entirely — an audience leaving as
+          the credits roll has finished the film.
+        </li>
+        <li>
+          <b>Work out who left.</b>
+          The same moment is cut nine ways: phone, TV, app build, delivery network, country,
+          interface language, audio language, subtitle availability, and whether this was the
+          viewer's first time. The question is not "how many left" but "was any group far more
+          likely to leave <i>here</i> than the audience as a whole".
+        </li>
+        <li>
+          <b>Watch the moment.</b>
+          Gemini watches those exact seconds of the real film and reports what is happening:
+          a synopsis, a beat-by-beat with timecodes, how it is paced, whether anyone is
+          speaking, whether the picture itself looks broken. <b>It is never told that anyone
+          walked out there</b>, which is the whole point — when it independently flags the same
+          moment, that is corroboration rather than an echo.
+        </li>
+        <li>
+          <b>Say what to fix, and to whom.</b>
+          The numbers and the footage are reconciled into one verdict with a named owner, the
+          evidence that decided it, and an estimate of the watch hours it would win back.
+        </li>
+      </ol>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section id="rules">
+      <h2>How it decides</h2>
+      <p>
+        Two measurements do most of the work, and both come out of the warehouse rather than
+        out of a model. This matters: a model asked to <i>adjudicate</i> evidence is doing
+        something it is good at, while a model asked to guess a buffering rate is not.
+      </p>
+
+      <h3>Concentration</h3>
+      <p>
+        How much likelier one group was to leave in this window, compared with everyone else
+        in the same window. If every device, build, country and language quit at the same rate,
+        the problem is on screen. If it is four times worse on one app build, the problem is
+        whatever that build is doing.
+      </p>
+
+      <h3>Rebuffer lift</h3>
+      <p>
+        How much worse buffering was <i>here</i> than it was for <b>the same group across the
+        rest of the film</b>. The comparison is what makes it mean anything. A group that
+        buffers everywhere has a platform problem, not a cliff. Only a group that buffers here
+        specifically explains people leaving here specifically.
+      </p>
+
+      <h3>What comes out</h3>
+      <table class="rules-table">
+        <thead>
+          <tr><th>What the evidence looks like</th><th>Verdict</th><th>Who owns it</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Concentrated on one build or device <b>and</b> buffering far above that group's own baseline</td>
+            <td><span class="v" style="--tag:var(--cause-technical)">Technical</span></td>
+            <td>Streaming engineer. Walkout will say in as many words <i>do not touch the edit</i>.</td>
+          </tr>
+          <tr>
+            <td>Concentrated on viewers whose interface language differs from the audio, with no subtitle track, and playback clean</td>
+            <td><span class="v" style="--tag:var(--cause-localization)">Localization</span></td>
+            <td>Localization manager. A missing subtitle track, not a bad scene.</td>
+          </tr>
+          <tr>
+            <td>Flat across every group, playback clean, and the footage reads as slow</td>
+            <td><span class="v" style="--tag:var(--cause-pacing)">Pacing</span></td>
+            <td>Editor. The numbers ruled everything else out and the picture agrees.</td>
+          </tr>
+          <tr>
+            <td>Flat across every group, playback clean, and the footage reads as fine</td>
+            <td><span class="v" style="--tag:var(--cause-unknown)">Unknown</span></td>
+            <td>Nobody yet — and it says so rather than inventing a cause.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="callout">
+        That last row is deliberate. Telemetry can prove a delivery failure and it can prove an
+        audience skew. It cannot tell a boring scene from a well-earned quiet moment, so on its
+        own it returns <i>unknown</i> and waits for the footage. A system that always produces
+        a confident cause is not more useful; it is just harder to catch being wrong.
+      </p>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section id="console-guide">
+      <h2>Reading the console</h2>
+      <p>The page is one investigation, told in three steps.</p>
+
+      <div class="guide">
+        <div class="guide-row">
+          <span class="guide-n">1</span>
+          <div>
+            <h4>Where they left</h4>
+            <p>
+              The dark line is how much of the audience is still watching. The filled area is
+              the quit rate — out of everyone still watching, the share who stopped in each ten
+              seconds. Shaded bands are the cliffs Walkout considers significant, which means
+              they cleared both a size threshold and a statistical one, so a small spike on a
+              handful of viewers does not qualify.
+            </p>
+            <p>
+              The credits are cut off the right-hand side on purpose. Leaving there means you
+              finished, and including it would bury three real findings under one meaningless one.
+            </p>
+          </div>
+        </div>
+
+        <div class="guide-row">
+          <span class="guide-n">2</span>
+          <div>
+            <h4>What was on screen</h4>
+            <p>
+              The film, with a jump button per cliff. Press one and the player seeks to that
+              exact second so you can watch what your audience was watching when they left.
+            </p>
+            <p>
+              <b>Watch this moment</b> sends that window to Gemini, which reads it blind and
+              reports back. Windows are capped at sixty seconds — reading video is the expensive
+              call, and this keeps a curious visitor from spending the day's budget in one click.
+            </p>
+          </div>
+        </div>
+
+        <div class="guide-row">
+          <span class="guide-n">3</span>
+          <div>
+            <h4>Why they left</h4>
+            <p>
+              One card per cliff: the timecode, how much worse than normal it was, the verdict,
+              and the watch hours at stake. Open a card for the evidence in sentences — which
+              group over-indexed, by how much, and what playback was doing.
+            </p>
+            <p>
+              On the right, the agent works through all of it by itself and writes the summary.
+            </p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section id="agent">
+      <h2>The agent</h2>
+      <p>
+        Everything above can be read off the page by hand. The agent does it unprompted: it
+        finds the cliffs, investigates each one, watches each one, and writes up what to fix,
+        ranked by what it would win back. It takes about half a minute and roughly seven model
+        calls.
+      </p>
+      <p>
+        It has three purpose-built tools — find the walk-outs, investigate one, watch one — and
+        direct read-only access to the warehouse through the official ClickHouse MCP server,
+        for follow-up questions the fixed tools do not answer. Every number in its write-up came
+        from a tool call; it is instructed never to estimate one and never to invent a timecode.
+      </p>
+      <p>
+        Because a full run costs real quota, finished investigations are stored and replayed on
+        the next visit, timestamped, with the button offering a fresh run. If a run is cut short,
+        it is kept too — but flagged, and the page says it was cut short. A truncated report
+        passed off as a finished one would be worse than an empty panel.
+      </p>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section id="data">
+      <h2>The demo data</h2>
+      <p>
+        A public dataset of scene-level walk-outs does not exist, so this demo generates one:
+        13,065,665 playback events across 250,000 viewing sessions of
+        <b>Sintel</b> (Blender Foundation, CC-BY 3.0), a twelve-minute film.
+      </p>
+      <p>
+        Crucially, the cliffs are <b>planted at known timecodes for known reasons</b>. That is
+        the only way to measure whether a diagnosis is actually <i>right</i> rather than merely
+        plausible.
+      </p>
+
+      <table class="rules-table">
+        <thead><tr><th>Window</th><th>Planted cause</th><th>Who it hit</th></tr></thead>
+        <tbody>
+          <tr><td class="mono">03:40–04:10</td><td>Story / pacing</td><td>Everyone, playback clean</td></tr>
+          <tr><td class="mono">09:20–10:00</td><td>Technical</td><td>Android players on build 4.2.1, buffering</td></tr>
+          <tr><td class="mono">02:10–02:40</td><td>Localization</td><td>Non-English locales with no subtitle track</td></tr>
+          <tr><td class="mono">10:20–10:40</td><td><i>Decoy</i></td><td>Mild, universal, below the significance floor — must never be reported</td></tr>
+        </tbody>
+      </table>
+
+      <p>
+        The timecodes are not arbitrary. Each was chosen by asking Gemini to survey the real
+        footage first, so the telemetry and the film agree. The pacing cliff sits on the
+        genuinely slowest passage — Sintel going to bed, static shots, no score. The
+        localization cliff sits on the shaman scene, where the plot goal is established
+        entirely through spoken English. An earlier draft planted the story cliff over the
+        dragon chase, which would have produced a demo where the numbers claim a scene drags
+        while the picture shows a kinetic action sequence.
+      </p>
+      <p>
+        The grader (<code>make eval</code>) runs the whole pipeline against this ground truth
+        and reports pass or fail per cliff. It currently passes all four, including correctly
+        ignoring the decoy.
+      </p>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section id="stack">
+      <h2>What it is built on</h2>
+      <table class="rules-table">
+        <tbody>
+          <tr><td>Agent</td><td>Google Agent Development Kit — <code>LlmAgent</code> with an <code>MCPToolset</code></td></tr>
+          <tr><td>Reasoning</td><td>Gemini 3.5 Flash</td></tr>
+          <tr><td>Video</td><td>Gemini 3.6 Flash, agentic video understanding</td></tr>
+          <tr><td>Warehouse</td><td>ClickHouse Cloud, read through the official <code>mcp-clickhouse</code> server</td></tr>
+          <tr><td>API</td><td>FastAPI, server-sent events for the agent stream</td></tr>
+          <tr><td>Serving</td><td>Docker on Railway</td></tr>
+        </tbody>
+      </table>
+      <p>
+        Reasoning and video run on separate models on purpose. They want different things — one
+        is a fast reasoner making a dozen short calls, the other reads video once and carefully —
+        and request quota is counted per model, so separating them also stops a long
+        investigation from starving its own video reads.
+      </p>
+      <p>
+        No non-Google AI model, API or agent framework is used anywhere in this project.
+        Tool orchestration is the ADK's own <code>MCPToolset</code>.
+      </p>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section id="run">
+      <h2>Running it yourself</h2>
+      <p>The repository is public and Apache-2.0.</p>
+      <pre><code>git clone https://github.com/martinvibes/walkout
+cd walkout
+
+make install        # virtualenv and the package
+make mcp-server     # the ClickHouse MCP server, in its own environment
+cp .env.example .env
+
+make doctor         # checks the connection before anything long runs
+make load           # applies the schema; safe to repeat, deletes nothing
+make simulate       # 13.1M events across 250k sessions, about four minutes
+
+make serve          # the console on http://127.0.0.1:8000
+make agent          # the same investigation, in the terminal
+make eval           # grade the diagnosis against the planted ground truth</code></pre>
+      <p>
+        The MCP server lives in its own environment because it needs version 2 of the MCP
+        protocol library while the ADK needs version 1. They are separate processes talking
+        over stdin and stdout, so the conflict only exists if you insist on one interpreter
+        for both.
+      </p>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section id="limits">
+      <h2>Limits and honesty</h2>
+      <ul class="plain">
+        <li>
+          <b>The demo data is simulated.</b> Real telemetry is nobody's to publish. The
+          simulation models hazard rates, buffering, device mix and locale mix, and the cliffs
+          are planted deliberately — which makes the diagnosis gradeable, but does not prove
+          the thresholds are right for your catalogue.
+        </li>
+        <li>
+          <b>One title.</b> The method is per-title by construction; nothing here has been
+          tested across a catalogue.
+        </li>
+        <li>
+          <b>Quota.</b> The public demo runs on a free-tier key allowing twenty requests per
+          day per model. This is why finished investigations are replayed rather than re-run.
+        </li>
+        <li>
+          <b>"Unknown" is a real answer</b> and you will see it. When playback is clean and no
+          group over-indexed, the numbers have ruled out delivery and availability and nothing
+          more. The footage decides the rest.
+        </li>
+      </ul>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section id="faq">
+      <h2>Questions</h2>
+
+      <div class="qa">
+        <h4>Can I paste a YouTube link and have it tell me where people stopped watching?</h4>
+        <p>
+          No, and neither can anything else. That would require knowing what the audience did,
+          and a video URL contains the film, not the audience. See
+          <a href="#cannot">what it cannot do</a>.
+        </p>
+      </div>
+
+      <div class="qa">
+        <h4>Could a YouTube creator use this on their own videos?</h4>
+        <p>
+          Partly. YouTube Studio gives creators a retention curve for videos they own, so the
+          cliffs and the footage reading would work. But YouTube only exposes an aggregate
+          curve — no device, app build, country or subtitle data — so the story-versus-delivery
+          split, which is the whole point, would not.
+        </p>
+      </div>
+
+      <div class="qa">
+        <h4>Why not just ask a model to watch the film and find the boring parts?</h4>
+        <p>
+          Because it would be guessing at what <i>seems</i> boring rather than measuring what
+          actually lost people, and it would be wrong in exactly the expensive direction: a
+          buffering failure looks perfectly fine on screen. Walkout's technical cliff is a
+          dragon fight — frantic, well-cut, no visible artefact at all. A model watching that
+          window alone would report a great scene. The audience left because the stream broke.
+        </p>
+      </div>
+
+      <div class="qa">
+        <h4>Does the model see the numbers before it watches?</h4>
+        <p>
+          No. That is deliberate and it is what makes agreement meaningful. If you tell a model
+          that viewers left at 03:40 and then ask what is wrong at 03:40, it will find
+          something. Asked cold, it either flags the moment on its own or it does not.
+        </p>
+      </div>
+
+      <div class="qa">
+        <h4>How is "watch hours recoverable" calculated?</h4>
+        <p>
+          The excess viewers who left at that cliff — the ones above what the title normally
+          loses over the same span — multiplied by the runtime still ahead of them, adjusted for
+          how many would have finished anyway. It is an upper bound on what fixing that one
+          moment could win back, and it is what the findings are ranked by.
+        </p>
+      </div>
+    </section>
+
+    <footer class="doc-foot">
+      <p>
+        Built for the Agentic Cinema hackathon, ClickHouse track.
+        <a href="https://github.com/martinvibes/walkout" target="_blank" rel="noopener">Source on GitHub</a> ·
+        <a href="/api/docs">API reference</a> ·
+        <a href="/#console">Open the console</a>
+      </p>
+    </footer>
+
+  </main>
+</div>
+
+<script src="/static/docs.js"></script>
+</body>
+</html>

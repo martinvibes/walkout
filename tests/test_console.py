@@ -14,12 +14,22 @@ from __future__ import annotations
 
 import re
 
+import pytest
+
 from walkout.config import PROJECT_ROOT
 
 STATIC = PROJECT_ROOT / "src" / "walkout" / "web" / "static"
 
 HTML = (STATIC / "index.html").read_text()
 JS = (STATIC / "app.js").read_text()
+
+DOCS_HTML = (STATIC / "docs.html").read_text()
+DOCS_JS = (STATIC / "docs.js").read_text()
+
+# Named so a failure says "docs" rather than printing both files into the
+# assertion message, which is what happens if pytest has to derive an id.
+PAGES = [("console", HTML, JS), ("docs", DOCS_HTML, DOCS_JS)]
+PAGE_IDS = [page[0] for page in PAGES]
 
 # `$("#thing")` and `$$("#thing .child")` -- take the id, drop any descendant.
 SELECTOR = re.compile(r'\$\$?\("#([A-Za-z0-9_-]+)')
@@ -34,24 +44,38 @@ SCRIPTED_ID = re.compile(r'\.id\s*=\s*"([A-Za-z0-9_-]+)"')
 BARE_CALL = re.compile(r"(?<![.\w$])([a-z][A-Za-z0-9_]*)\s*\(")
 
 KEYWORDS = {"if", "for", "while", "switch", "catch", "return", "typeof", "function", "var"}
+# Bare `window` methods -- the page calls them unqualified, as everyone does.
 BROWSER_GLOBALS = {"fetch", "setTimeout", "setInterval", "clearTimeout",
-                   "requestAnimationFrame", "resolve", "reject", "escape"}
+                   "clearInterval", "requestAnimationFrame", "addEventListener",
+                   "removeEventListener", "matchMedia", "resolve", "reject",
+                   "escape"}
 
 
-def test_every_selector_has_an_element() -> None:
-    ids = (set(MARKUP_ID.findall(HTML))
-           | set(MARKUP_ID.findall(JS))
-           | set(SCRIPTED_ID.findall(JS)))
-    missing = sorted({m for m in SELECTOR.findall(JS) if m not in ids})
-    assert not missing, f"app.js reaches for ids that do not exist: {missing}"
+@pytest.mark.parametrize("name, markup, script", PAGES, ids=PAGE_IDS)
+def test_every_selector_has_an_element(name, markup, script) -> None:
+    ids = (set(MARKUP_ID.findall(markup))
+           | set(MARKUP_ID.findall(script))
+           | set(SCRIPTED_ID.findall(script)))
+    missing = sorted({m for m in SELECTOR.findall(script) if m not in ids})
+    assert not missing, f"{name} reaches for ids that do not exist: {missing}"
 
 
-def test_every_function_called_is_defined() -> None:
+@pytest.mark.parametrize("name, markup, script", PAGES, ids=PAGE_IDS)
+def test_every_function_called_is_defined(name, markup, script) -> None:
     """Catches the edit that removes a function but not its callers."""
-    defined = set(re.findall(r"function\s+([A-Za-z_][\w]*)", JS))
-    defined |= set(re.findall(r"(?:const|let|var)\s+([A-Za-z_][\w]*)\s*=", JS))
-    missing = sorted(set(BARE_CALL.findall(JS)) - defined - KEYWORDS - BROWSER_GLOBALS)
-    assert not missing, f"app.js calls functions that are not defined: {missing}"
+    defined = set(re.findall(r"function\s+([A-Za-z_][\w]*)", script))
+    defined |= set(re.findall(r"(?:const|let|var)\s+([A-Za-z_][\w]*)\s*=", script))
+    missing = sorted(set(BARE_CALL.findall(script)) - defined - KEYWORDS - BROWSER_GLOBALS)
+    assert not missing, f"{name} calls functions that are not defined: {missing}"
+
+
+@pytest.mark.parametrize("name, markup, script", PAGES, ids=PAGE_IDS)
+def test_every_internal_anchor_has_a_target(name, markup, script) -> None:
+    """A contents rail pointing at a section that does not exist is dead furniture."""
+    ids = set(MARKUP_ID.findall(markup))
+    anchors = {a for a in re.findall(r'href="#([A-Za-z0-9_-]+)"', markup) if a}
+    missing = sorted(anchors - ids)
+    assert not missing, f"{name} links to anchors that do not exist: {missing}"
 
 
 def test_the_film_is_actually_on_the_page() -> None:

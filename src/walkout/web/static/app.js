@@ -671,9 +671,8 @@ async function watchWindow() {
   const button = $("#watch");
   button.disabled = true;
   button.innerHTML = 'Watching<span class="arrow">…</span>';
-  $("#reading").innerHTML =
-    `<p class="read-idle">Gemini is watching those seconds of the film…</p>`;
 
+  const stopWaiting = showWatching();
   const { start, end } = state.window;
   try {
     const reading = await getJson(
@@ -683,10 +682,44 @@ async function watchWindow() {
     $("#reading").innerHTML =
       `<div class="banner err">${escapeHtml(err.message)}</div>`;
   } finally {
+    stopWaiting();
     state.watching = false;
     button.disabled = false;
     button.innerHTML = 'Watch this moment <span class="arrow">→</span>';
   }
+}
+
+/* Show the shape of the answer while the model works on it.
+
+   Reading video takes ten to twenty seconds. A sentence saying "please wait"
+   leaves the panel looking broken for all of it; a skeleton of the real layout
+   reads as the answer arriving, and nothing jumps when it does. The elapsed
+   counter is the honest part -- it says the wait is real and how long it has
+   been so far, which is less unnerving than a spinner that could mean anything. */
+function showWatching() {
+  const started = Date.now();
+  $("#reading").innerHTML = `
+    <div class="watching">
+      <div class="watching-head">
+        <span class="reel"><i></i><i></i><i></i><i></i></span>
+        Gemini is watching the film
+        <span class="watching-secs" id="watchSecs">0s</span>
+      </div>
+      <div class="ghost-line"></div>
+      <div class="ghost-line"></div>
+      <div class="ghost-line short"></div>
+      <div style="margin:18px 0 14px">
+        <span class="ghost-line tag"></span><span class="ghost-line tag"></span>
+      </div>
+      <div class="ghost-line"></div>
+      <div class="ghost-line short"></div>
+    </div>`;
+
+  const tick = setInterval(() => {
+    const secs = $("#watchSecs");
+    if (secs) secs.textContent = `${Math.round((Date.now() - started) / 1000)}s`;
+  }, 250);
+  return () => clearInterval(tick);
 }
 
 function renderReading(reading) {
