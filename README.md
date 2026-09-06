@@ -2,6 +2,8 @@
 
 **Every platform knows *when* viewers stop watching. None of them know *why*.**
 
+**Live: https://walkout-production-f914.up.railway.app**
+
 Retention curves are everywhere — YouTube Studio, Mux, Conviva, every OTT
 analytics stack. They all tell you the same thing: 18% of your audience left at
 04:08. Not one of them tells you what happened at 04:08.
