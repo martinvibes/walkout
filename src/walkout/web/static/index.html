@@ -82,73 +82,162 @@
     <div>
       <span class="eyebrow static">Live cluster</span>
       <h2>Retention forensics</h2>
+      <p class="console-lede">
+        Pick a title and follow it down: <b>where</b> its audience walked out, <b>what was on
+        screen</b> when they did, and <b>why</b> — because a scene that drags and a stream that
+        stutters make the same shape on a chart and need opposite fixes.
+      </p>
     </div>
     <div class="title-pick" id="titles"></div>
   </div>
 
   <div class="stat-row" id="stats"></div>
 
-  <section class="card chart-card">
-    <div class="chart-head">
+  <!-- 1 ---------------------------------------------------------------- -->
+  <section class="stage">
+    <header class="stage-head">
+      <span class="stage-n">1</span>
       <div>
-        <h3>Hazard rate across the runtime</h3>
-        <p class="note">The share of viewers still watching who leave in each ten-second bucket. Cliffs are shaded; the end credits are excluded, because leaving there is finishing.</p>
+        <h3>Where they left</h3>
+        <p>Every drop below is a moment when far more people quit than this title
+           normally loses. Not the gentle drift every film has — the cliffs.</p>
       </div>
-      <div class="chart-legend">
-        <span style="color:var(--ink)"><i></i> retention</span>
-        <span><i></i> hazard</span>
-        <span style="color:var(--danger)"><i></i> cliff</span>
+    </header>
+
+    <div class="card chart-card">
+      <div class="chart-head">
+        <div>
+          <h4>Hazard rate across the runtime</h4>
+          <p class="note">Out of everyone still watching, the share who quit in each ten seconds. Shaded bands are the cliffs. The end credits are left out — leaving there means you finished.</p>
+        </div>
+        <div class="chart-legend">
+          <span style="color:var(--ink)"><i></i> still watching</span>
+          <span><i></i> quitting</span>
+          <span style="color:var(--danger)"><i></i> cliff</span>
+        </div>
       </div>
+      <div class="chart-wrap"><svg id="curve" viewBox="0 0 1000 320" role="img" aria-label="Retention and hazard across the runtime"></svg></div>
     </div>
-    <div class="chart-wrap"><svg id="curve" viewBox="0 0 1000 320" role="img" aria-label="Retention and hazard across the runtime"></svg></div>
   </section>
 
-  <div class="layout">
-    <div class="cliff-list" id="cliffs"></div>
-
-    <aside class="card agent" id="agentPanel">
-      <div class="agent-head">
-        <h3>The agent</h3>
-        <button class="btn" id="run" style="padding:10px 18px;font-size:14px">Investigate <span class="arrow">→</span></button>
+  <!-- 2 ---------------------------------------------------------------- -->
+  <section class="stage">
+    <header class="stage-head">
+      <span class="stage-n">2</span>
+      <div>
+        <h3>What was on screen</h3>
+        <p>Jump the film to any cliff and watch it yourself — then ask Gemini what it
+           sees. It is never told that anyone left there, so when the picture agrees
+           with the numbers, that agreement means something.</p>
       </div>
-      <p class="replay" id="replay" hidden></p>
-      <p class="agent-sub">
-        Gemini reads each cliff window of the actual film — blind to the telemetry, so agreement
-        between the picture and the numbers means something. Takes about a minute.
-      </p>
-      <div class="trace" id="trace"></div>
-      <div class="verdict" id="verdict" hidden></div>
-    </aside>
-  </div>
+    </header>
+
+    <div class="film">
+      <div class="card film-player">
+        <div class="player-frame"><div id="player"></div></div>
+        <div class="player-bar">
+          <span class="mono" id="playerNow">—</span>
+          <div class="jumps" id="jumps"></div>
+        </div>
+      </div>
+
+      <div class="card film-read">
+        <div class="read-head">
+          <h4>Ask Gemini to watch it</h4>
+          <button class="btn ghost" id="watch">Watch this moment <span class="arrow">→</span></button>
+        </div>
+        <p class="read-window">Reading <span class="mono" id="watchWindow">00:03:40–00:04:10</span></p>
+        <div class="read-body" id="reading">
+          <p class="read-idle">Pick a cliff on the left, then press the button. Gemini
+             watches those exact seconds of the real film and reports what is
+             happening — the pacing, the dialogue, anything visibly broken.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 3 ---------------------------------------------------------------- -->
+  <section class="stage">
+    <header class="stage-head">
+      <span class="stage-n">3</span>
+      <div>
+        <h3>Why they left</h3>
+        <p>The numbers say who left; the film says what they were watching. Put the two
+           together and the fix has an owner — an editor, a translator, or an engineer.</p>
+      </div>
+    </header>
+
+    <div class="layout">
+      <div class="cliff-list" id="cliffs"></div>
+
+      <aside class="card agent" id="agentPanel">
+        <div class="agent-head">
+          <h4>The agent</h4>
+          <button class="btn" id="run" style="padding:10px 18px;font-size:14px">Investigate <span class="arrow">→</span></button>
+        </div>
+        <p class="replay" id="replay" hidden></p>
+        <p class="agent-sub">
+          Works through every cliff on its own: pulls the numbers, watches the film, and
+          writes up what to fix and what it would win back. About half a minute.
+        </p>
+        <div class="trace" id="trace"></div>
+        <div class="verdict" id="verdict" hidden></div>
+      </aside>
+    </div>
+  </section>
 </main>
 
 <section class="how" id="how">
   <div class="shell">
     <span class="eyebrow static">Method</span>
     <h2 style="font-size:clamp(28px,3.4vw,44px);margin-top:12px;max-width:20ch">Two witnesses that never spoke to each other.</h2>
+    <p class="how-lede">Your numbers know exactly when people left but have never seen the film.
+       A model that watches the film has no idea which thirty seconds out of ninety minutes
+       matter. Walkout is the conversation between them.</p>
 
     <div class="how-grid">
       <article class="how-card fade-up">
         <span class="n">01</span>
-        <h4>Find the cliffs</h4>
-        <p>Survival analysis over every playback heartbeat in ClickHouse. Hazard rate against a robust post-warmup baseline, a binomial z-test for significance, completions treated as censored rather than as exits.</p>
+        <h4>Find where they left</h4>
+        <p>We read every play, pause and quit from every viewer and look for the moments
+           where far more people stopped than this title normally loses. Every film has a
+           slow leak; we are only interested in the cliffs. Someone who watched to the end
+           is not counted as having left.</p>
       </article>
       <article class="how-card fade-up">
         <span class="n">02</span>
-        <h4>Slice the audience</h4>
-        <p>Each cliff is cut by device, platform, app build, CDN, region, locale and subtitle availability. Concentration — how much likelier one cohort was to leave here — is the discriminator.</p>
+        <h4>Work out who left</h4>
+        <p>The same moment gets cut by phone, TV, app version, country, language and
+           delivery network. If everyone quit at the same rate, the problem is on screen.
+           If it is mostly one group, the problem is whatever that group had in common.</p>
       </article>
       <article class="how-card fade-up">
         <span class="n">03</span>
-        <h4>Watch the film</h4>
-        <p>Gemini reads that exact window of video and reports pacing, dialogue, what is on screen and any visible artefact. It is never told what the telemetry said.</p>
+        <h4>Watch the moment</h4>
+        <p>Gemini watches those exact seconds of the real film and describes what is
+           happening — how it is paced, whether anyone is speaking, whether the picture
+           itself looks broken. It is never told that anyone walked out there, so when it
+           independently flags the same moment, that is real corroboration.</p>
       </article>
       <article class="how-card fade-up">
         <span class="n">04</span>
-        <h4>Reconcile</h4>
-        <p>Concentrated in one build with rebuffering above that cohort's own baseline is an engineering ticket. Flat across every cohort with clean playback is the cut. Inconclusive is said out loud.</p>
+        <h4>Say what to fix, and to whom</h4>
+        <p>Buffering on one app build is an engineering ticket, and Walkout will tell you
+           in as many words not to touch the edit. Viewers in one language with no subtitle
+           track is a job for your localization team. A quiet scene everyone walked out of
+           is a note for the editor. When it genuinely cannot tell, it says so instead of
+           guessing.</p>
       </article>
     </div>
+
+    <p class="how-foot fade-up">
+      Walkout runs on the playback telemetry a streaming service already collects — the
+      same events behind any retention chart. This demo runs on <b>Sintel</b> (Blender
+      Foundation, CC-BY) with 13 million simulated viewing events, and cliffs planted at
+      known timecodes for known reasons so the diagnosis can be graded rather than merely
+      admired. The film itself is watched straight from YouTube; it is never copied or
+      hosted here.
+    </p>
 
     <div class="stack fade-up">
       <span>Gemini 3.5 Flash</span>

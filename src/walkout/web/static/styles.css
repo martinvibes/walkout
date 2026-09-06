@@ -975,3 +975,200 @@ a { color: inherit; }
   border-color: color-mix(in srgb, var(--cause-localization) 35%, var(--line));
   background: color-mix(in srgb, var(--cause-localization) var(--tint), var(--surface));
 }
+
+/* ===========================================================================
+   The console, told as three steps
+   =========================================================================== */
+
+.console-lede {
+  margin: 14px 0 0;
+  max-width: 62ch;
+  font-size: 15.5px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+.console-lede b { color: var(--ink); font-weight: 600; }
+
+.stage { margin-top: 56px; }
+
+.stage-head {
+  display: flex;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+.stage-head h3 {
+  margin: 0;
+  font-size: clamp(20px, 2.2vw, 26px);
+  letter-spacing: -.02em;
+}
+.stage-head p {
+  margin: 6px 0 0;
+  max-width: 66ch;
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+}
+
+/* The number is the spine of the page: it is what tells someone scrolling
+   that these three blocks are one sequence and not three separate widgets. */
+.stage-n {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-pill);
+  background: var(--brand);
+  color: var(--on-brand);
+  font: 600 15px/1 var(--mono);
+  margin-top: 2px;
+}
+
+/* --- the film ------------------------------------------------------------ */
+
+.film {
+  display: grid;
+  grid-template-columns: minmax(0, 1.45fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+@media (max-width: 940px) { .film { grid-template-columns: 1fr; } }
+
+.film-player { padding: 14px; }
+
+.player-frame {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  border-radius: calc(var(--radius) - 4px);
+  overflow: hidden;
+  background: #000;
+}
+.player-frame iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+
+.player-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+.player-bar > .mono { font-size: 12px; color: var(--ink-faint); }
+
+.jumps { display: flex; gap: 8px; flex-wrap: wrap; margin-left: auto; }
+
+/* One button per cliff. Labelled with the timecode rather than "cliff 2",
+   because the timecode is the thing someone can act on. */
+.jump-chip {
+  padding: 7px 12px;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-pill);
+  background: var(--surface);
+  color: var(--ink-soft);
+  font: 500 12px/1 var(--mono);
+  cursor: pointer;
+  transition: background .18s var(--ease-soft), color .18s var(--ease-soft),
+              border-color .18s var(--ease-soft), transform .18s var(--ease);
+}
+.jump-chip:hover { transform: translateY(-1px); border-color: var(--ink); color: var(--ink); }
+.jump-chip[aria-pressed="true"] {
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--on-brand);
+}
+.jump-chip i {
+  display: inline-block;
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  margin-right: 7px;
+  background: currentColor;
+  vertical-align: middle;
+}
+
+/* --- what Gemini saw ----------------------------------------------------- */
+
+.film-read { display: flex; flex-direction: column; min-height: 300px; }
+
+.read-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.read-head h4 { margin: 0; font-size: 16px; }
+
+.read-window { margin: 10px 0 14px; font-size: 12.5px; color: var(--ink-faint); }
+.read-window .mono { color: var(--ink-soft); }
+
+.read-body { flex: 1; overflow-y: auto; max-height: 380px; }
+.read-idle { margin: 0; font-size: 13.5px; line-height: 1.65; color: var(--ink-faint); }
+
+.read-synopsis {
+  margin: 0 0 16px;
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink);
+}
+
+.read-tags { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 16px; }
+.read-tag {
+  padding: 5px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--surface-sunk);
+  border: 1px solid var(--line);
+  font: 500 11.5px/1 var(--sans);
+  color: var(--ink-soft);
+}
+.read-tag b { color: var(--ink); font-weight: 600; }
+
+.read-section { margin-bottom: 15px; }
+.read-section h5 {
+  margin: 0 0 7px;
+  font: 600 11px/1 var(--sans);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.read-section ul { margin: 0; padding-left: 17px; }
+.read-section li {
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-soft);
+  margin-bottom: 4px;
+}
+
+/* Beats are the model showing its working: a timecode next to what it saw
+   there. Monospaced so the times line up and read as evidence. */
+.beat { display: flex; gap: 11px; margin-bottom: 7px; align-items: baseline; }
+.beat time { flex: none; font: 500 11.5px/1.5 var(--mono); color: var(--ink-faint); }
+.beat span { font-size: 13.5px; line-height: 1.55; color: var(--ink-soft); }
+
+.btn.ghost {
+  padding: 9px 15px;
+  font-size: 13px;
+  background: var(--surface);
+  color: var(--ink);
+  border: 1px solid var(--line-strong);
+}
+.btn.ghost:hover:not(:disabled) { border-color: var(--ink); background: var(--surface-sunk); }
+
+/* --- how it works -------------------------------------------------------- */
+
+.how-lede {
+  margin: 16px 0 0;
+  max-width: 60ch;
+  font-size: 16px;
+  line-height: 1.65;
+  color: var(--ink-soft);
+}
+
+.how-foot {
+  margin: 34px 0 0;
+  max-width: 76ch;
+  font-size: 13.5px;
+  line-height: 1.7;
+  color: var(--ink-faint);
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+}
+.how-foot b { color: var(--ink-soft); font-weight: 600; }

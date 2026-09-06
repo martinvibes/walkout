@@ -246,6 +246,41 @@ async def agent_stream(title_id: str, q: str | None = None) -> StreamingResponse
     )
 
 
+# Reading video is the expensive call on the page, so the window someone can
+# ask for is bounded. Sixty seconds is longer than any cliff we detect and short
+# enough that a curious visitor cannot spend the daily quota in one click.
+MAX_WATCH_SEC = 60
+
+
+@app.get("/api/watch/{title_id}")
+def watch(title_id: str, start: int, end: int) -> dict[str, Any]:
+    """Have Gemini read one window of the film, blind to the telemetry.
+
+    This is the half of the product that telemetry cannot do, and until now it
+    was only reachable through the agent. On its own it is worth showing: give
+    it any thirty seconds and it comes back with what is on screen, how the
+    scene is paced, and whether anything is visibly broken -- without ever being
+    told that viewers left there.
+    """
+    from ..vision import watch_window
+
+    title = _title_or_404(title_id)
+    duration = int(title["duration_sec"])
+
+    if end <= start:
+        raise HTTPException(422, "end must be after start")
+    if end - start > MAX_WATCH_SEC:
+        raise HTTPException(422, f"window must be {MAX_WATCH_SEC} seconds or shorter")
+    if start < 0 or end > duration:
+        raise HTTPException(422, f"window must sit inside the runtime (0-{duration}s)")
+
+    try:
+        reading = watch_window(str(title["video_uri"]), start, end)
+    except Exception as exc:  # noqa: BLE001 -- quota and safety blocks both land here
+        raise HTTPException(502, f"{type(exc).__name__}: {exc}") from exc
+    return reading.to_dict()
+
+
 @app.get("/api/agent/{title_id}/last")
 def agent_last(title_id: str) -> dict[str, Any]:
     """The most recent investigation, replayed from ClickHouse.

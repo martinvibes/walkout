@@ -10,7 +10,8 @@
 const $  = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
 
-const state = { titleId: null, title: null, cliffs: [], running: false };
+const state = { titleId: null, title: null, cliffs: [], running: false,
+                window: null, player: null, watching: false };
 
 /* --- theme --------------------------------------------------------------- */
 
@@ -174,6 +175,8 @@ async function selectTitle(titleId) {
     renderStats(data);
     drawChart();
     renderCliffs(data.cliffs);
+    renderJumps(data.cliffs);
+    mountPlayer(data.title);
   } catch (err) {
     $("#cliffs").innerHTML = `<div class="banner err">Could not reach the warehouse. ${escapeHtml(err.message)}</div>`;
   }
@@ -398,7 +401,11 @@ function renderCliffs(cliffs) {
   `).join("");
 
   $$("#cliffs .cliff").forEach((el) => {
-    el.addEventListener("click", () => toggleCliff(el));
+    el.addEventListener("click", () => {
+      toggleCliff(el);
+      const cliff = cliffs.find((c) => c.cliff_id === el.dataset.id);
+      if (cliff) selectWindow(cliff);
+    });
   });
 
   // Open the worst one and let it explain itself; a blank panel teaches nothing.
@@ -574,6 +581,145 @@ function runAgent() {
   };
 }
 
+/* --- the film ------------------------------------------------------------ */
+
+/* The product's whole claim is that a model watches the actual film, and until
+   now the film was nowhere on the page. Embedding it does two things: it lets
+   someone check the verdict with their own eyes, and it makes "Gemini watched
+   00:03:40 to 00:04:10" a thing you can see rather than a thing you are told. */
+
+const YT_API = "https://www.youtube.com/iframe_api";
+
+function videoId(uri) {
+  const match = String(uri || "").match(/(?:v=|youtu\.be\/|embed\/)([\w-]{11})/);
+  return match ? match[1] : "";
+}
+
+function loadPlayerApi() {
+  if (window.YT?.Player) return Promise.resolve();
+  if (!loadPlayerApi.pending) {
+    loadPlayerApi.pending = new Promise((resolve, reject) => {
+      window.onYouTubeIframeAPIReady = resolve;
+      const tag = document.createElement("script");
+      tag.src = YT_API;
+      tag.onerror = () => reject(new Error("YouTube player did not load"));
+      document.head.appendChild(tag);
+    });
+  }
+  return loadPlayerApi.pending;
+}
+
+async function mountPlayer(title) {
+  const id = videoId(title.video_uri);
+  if (!id) return;
+  try {
+    await loadPlayerApi();
+  } catch {
+    // Better an honest link than an empty black box.
+    $("#player").outerHTML =
+      `<a class="read-idle" style="display:grid;place-items:center;height:100%"
+          href="${escapeHtml(title.video_uri)}" target="_blank" rel="noopener">
+         Open the film on YouTube →</a>`;
+    return;
+  }
+  if (state.player) { state.player.cueVideoById(id); return; }
+  state.player = new YT.Player("player", {
+    videoId: id,
+    playerVars: { modestbranding: 1, rel: 0, playsinline: 1 },
+  });
+  setInterval(showPlayhead, 500);
+}
+
+function showPlayhead() {
+  const at = state.player?.getCurrentTime?.();
+  if (typeof at === "number") $("#playerNow").textContent = timecode(Math.floor(at));
+}
+
+/* Selecting a window is the one piece of shared state between the player, the
+   jump buttons and the read panel, so it lives in one function. */
+function selectWindow(cliff) {
+  state.window = { start: cliff.start_sec, end: cliff.end_sec };
+  $("#watchWindow").textContent =
+    `${cliff.start_timecode}\u2013${cliff.end_timecode}`;
+  $$("#jumps .jump-chip").forEach((chip) => {
+    chip.setAttribute("aria-pressed", String(chip.dataset.id === cliff.cliff_id));
+  });
+  if (state.player?.seekTo) {
+    state.player.seekTo(cliff.start_sec, true);
+    state.player.playVideo?.();
+  }
+}
+
+function renderJumps(cliffs) {
+  $("#jumps").innerHTML = cliffs.map((c) => `
+    <button class="jump-chip" data-id="${c.cliff_id}" aria-pressed="false"
+            title="Jump the film to ${c.start_timecode}"><i></i>${c.start_timecode.slice(3)}</button>
+  `).join("");
+  $$("#jumps .jump-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      const cliff = cliffs.find((c) => c.cliff_id === chip.dataset.id);
+      if (cliff) selectWindow(cliff);
+    });
+  });
+  if (cliffs.length) selectWindow(cliffs[0]);
+}
+
+async function watchWindow() {
+  if (state.watching || !state.window || !state.titleId) return;
+  state.watching = true;
+
+  const button = $("#watch");
+  button.disabled = true;
+  button.innerHTML = 'Watching<span class="arrow">…</span>';
+  $("#reading").innerHTML =
+    `<p class="read-idle">Gemini is watching those seconds of the film…</p>`;
+
+  const { start, end } = state.window;
+  try {
+    const reading = await getJson(
+      `/api/watch/${state.titleId}?start=${start}&end=${end}`);
+    $("#reading").innerHTML = renderReading(reading);
+  } catch (err) {
+    $("#reading").innerHTML =
+      `<div class="banner err">${escapeHtml(err.message)}</div>`;
+  } finally {
+    state.watching = false;
+    button.disabled = false;
+    button.innerHTML = 'Watch this moment <span class="arrow">→</span>';
+  }
+}
+
+function renderReading(reading) {
+  const list = (title, items) => items?.length ? `
+    <div class="read-section">
+      <h5>${title}</h5>
+      <ul>${items.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>
+    </div>` : "";
+
+  const tag = (label, value) => value
+    ? `<span class="read-tag">${label} <b>${escapeHtml(value)}</b></span>` : "";
+
+  return `
+    <p class="read-synopsis">${escapeHtml(reading.synopsis)}</p>
+    <div class="read-tags">
+      ${tag("Pacing", reading.pacing)}
+      ${tag("Dialogue", reading.dialogue)}
+      ${tag("Role", reading.narrative_role)}
+    </div>
+    ${reading.beats?.length ? `
+      <div class="read-section">
+        <h5>Beat by beat</h5>
+        ${reading.beats.map((b) => `
+          <div class="beat">
+            <time>${escapeHtml(b.timecode)}</time>
+            <span>${escapeHtml(b.description)}</span>
+          </div>`).join("")}
+      </div>` : ""}
+    ${list("Where attention slips", reading.attention_risks)}
+    ${list("Visible problems with the picture", reading.visual_artifacts)}
+    ${list("Text on screen", reading.on_screen_text)}`;
+}
+
 /* --- boot ---------------------------------------------------------------- */
 
 /* A silent client-side failure on a demo looks like a broken product. If
@@ -600,6 +746,7 @@ watchScroll();
 loadTitles();
 
 $("#run").addEventListener("click", runAgent);
+$("#watch").addEventListener("click", watchWindow);
 $("#jump").addEventListener("click", () => {
   $("#console").scrollIntoView({ behavior: "smooth", block: "start" });
 });
