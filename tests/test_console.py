@@ -68,3 +68,37 @@ def test_the_console_reads_as_numbered_steps() -> None:
     """Where, then what was on screen, then why -- in that order."""
     stages = re.findall(r'<span class="stage-n">(\d)</span>', HTML)
     assert stages == ["1", "2", "3"], stages
+
+
+def test_api_key_mode_does_not_demand_a_cloud_project(monkeypatch) -> None:
+    """The deploy came up healthy and then failed on the first model call.
+
+    `GOOGLE_CLOUD_PROJECT` was required unconditionally but read by nothing.
+    In API-key mode there is no project to name, so demanding one turned a
+    correctly configured deployment into a 500 the moment anyone pressed a
+    button. Health checks do not touch a model, so nothing caught it.
+    """
+    from walkout.config import GoogleConfig
+
+    monkeypatch.setenv("GOOGLE_GENAI_USE_VERTEXAI", "false")
+    monkeypatch.setenv("GOOGLE_API_KEY", "test-key")
+    monkeypatch.delenv("GOOGLE_CLOUD_PROJECT", raising=False)
+
+    config = GoogleConfig.from_env()
+    assert config.use_vertex is False
+    assert config.project == ""
+    assert config.model
+
+
+def test_vertex_mode_still_requires_a_project(monkeypatch) -> None:
+    from walkout.config import ConfigError, GoogleConfig
+
+    monkeypatch.setenv("GOOGLE_GENAI_USE_VERTEXAI", "true")
+    monkeypatch.delenv("GOOGLE_CLOUD_PROJECT", raising=False)
+
+    try:
+        GoogleConfig.from_env()
+    except ConfigError as exc:
+        assert "GOOGLE_CLOUD_PROJECT" in str(exc)
+    else:
+        raise AssertionError("Vertex mode should demand a project")
