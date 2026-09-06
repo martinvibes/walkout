@@ -10,7 +10,9 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/styles.css">
 <link rel="stylesheet" href="/static/docs.css">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📉</text></svg>">
+<link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
+<link rel="icon" type="image/png" sizes="32x32" href="/static/favicon-32.png">
+<link rel="apple-touch-icon" href="/static/apple-touch-icon.png">
 </head>
 <body>
 
@@ -58,6 +60,7 @@
       <a href="#agent">The agent</a>
       <a href="#data">The demo data</a>
       <a href="#stack">What it is built on</a>
+      <a href="#api">The API</a>
       <a href="#run">Running it yourself</a>
       <a href="#limits">Limits and honesty</a>
       <a href="#faq">Questions</a>
@@ -408,6 +411,70 @@
       <p>
         No non-Google AI model, API or agent framework is used anywhere in this project.
         Tool orchestration is the ADK's own <code>MCPToolset</code>.
+      </p>
+    </section>
+
+    <!-- ---------------------------------------------------------------- -->
+    <section id="api">
+      <h2>The API</h2>
+      <p>
+        Everything the console does is a plain HTTP call, so anything on this page can be
+        driven from a script, a notebook, or your own front end. There is no key and no
+        session; the demo is read-only.
+      </p>
+
+      <a class="api-cta" href="/api/docs">
+        <span class="api-cta-main">
+          <b>Open the interactive API reference</b>
+          <span>Every endpoint with its parameters, response shape, and a Try&nbsp;it button that
+                runs against this live deployment.</span>
+        </span>
+        <span class="arrow">→</span>
+      </a>
+
+      <table class="rules-table">
+        <thead><tr><th>Endpoint</th><th>What it returns</th></tr></thead>
+        <tbody>
+          <tr>
+            <td class="mono">GET /api/titles</td>
+            <td>Everything in the warehouse: runtime, where the credits start, the video link.</td>
+          </tr>
+          <tr>
+            <td class="mono">GET /api/retention/{title_id}</td>
+            <td>The survival curve, the cliffs found on it, and the watch hours each one costs.</td>
+          </tr>
+          <tr>
+            <td class="mono">GET /api/investigate/{title_id}</td>
+            <td>The telemetry evidence for every cliff at once — cohort breakdowns, buffering
+                comparison, and the cause the numbers alone support. No model call, so this is
+                fast and free.</td>
+          </tr>
+          <tr>
+            <td class="mono">GET /api/watch/{title_id}<br>?start=&amp;end=</td>
+            <td>Gemini reads that window of the film blind: synopsis, beats with timecodes,
+                pacing, dialogue, visible artefacts. Windows are capped at sixty seconds.</td>
+          </tr>
+          <tr>
+            <td class="mono">GET /api/agent/{title_id}</td>
+            <td>Runs the full agent, streaming every tool call and every token as
+                server-sent events.</td>
+          </tr>
+          <tr>
+            <td class="mono">GET /api/agent/{title_id}/last</td>
+            <td>The most recent completed investigation, replayed from ClickHouse. Costs
+                nothing, which is why the page opens with it.</td>
+          </tr>
+          <tr>
+            <td class="mono">GET /api/health</td>
+            <td>Runs a real <code>count()</code> against ClickHouse rather than just proving the
+                process is alive.</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="callout">
+        Try it without leaving the page:
+        <code>curl https://walkout-production-f914.up.railway.app/api/health</code>
       </p>
     </section>
 

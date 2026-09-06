@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- The nav mark, redrawn for a 16px tab: the same chart glyph, but with the
+       stroke thickened and the geometry opened up, because the 16px original
+       turns into a smudge once a browser scales it down to tab size. -->
+  <rect width="32" height="32" rx="9" fill="#12120F"/>
+  <g fill="none" stroke="#FBFBFA" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M7 7v18h18" stroke-width="2.6" opacity=".55"/>
+    <path d="M10.5 19.5 14.5 15.5l3 3 6.5-8" stroke-width="3.2"/>
+  </g>
+</svg>
