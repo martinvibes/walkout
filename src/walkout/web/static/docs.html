@@ -80,6 +80,36 @@
       </p>
     </header>
 
+    <!-- The three things people arrive here wanting, above the fold, before
+         fourteen sections of prose. The API reference in particular was at the
+         bottom of a long document, which is the same as not having one. -->
+    <div class="quick">
+      <a class="quick-card primary" href="/api/docs">
+        <span class="quick-tag">API reference</span>
+        <b>Open the interactive API</b>
+        <span class="quick-sub">Every endpoint, its parameters and response shape, with a
+              Try&nbsp;it button that runs against this live deployment. No key, no session.</span>
+        <span class="quick-go">Open <span class="arrow">&rarr;</span></span>
+      </a>
+      <a class="quick-card" href="/#console">
+        <span class="quick-tag">Console</span>
+        <b>Try it on real data</b>
+        <span class="quick-sub">13 million playback events, three planted cliffs, and an agent
+              that works through all of them live.</span>
+        <span class="quick-go">Open <span class="arrow">&rarr;</span></span>
+      </a>
+      <a class="quick-card" href="https://github.com/martinvibes/walkout" target="_blank" rel="noopener">
+        <span class="quick-tag">Source</span>
+        <b>Read every line</b>
+        <span class="quick-sub">Apache-2.0. No build step, no framework on the page, nothing
+              hidden behind a bundle.</span>
+        <span class="quick-go">GitHub <span class="arrow">&rarr;</span></span>
+      </a>
+    </div>
+
+    <p class="quick-curl">Or start here:
+      <code>curl https://walkout-production-f914.up.railway.app/api/retention/sintel</code></p>
+
     <!-- ---------------------------------------------------------------- -->
     <section id="what">
       <h2>What Walkout is</h2>
@@ -306,6 +336,14 @@
               reports back. Windows are capped at sixty seconds, because reading video is the expensive
               call, and this keeps a curious visitor from spending the day's budget in one click.
             </p>
+            <p>
+              The three chips are the cliffs the analysis found, which is the right default: they
+              are the moments worth looking at. <b>Custom</b> is there because the claim being made
+              is that the model reads <i>any</i> window of this film, and a demo that only ever
+              reads three prepared moments invites the obvious suspicion about those three. Scrub
+              the player anywhere, press <b>Use playhead</b>, pick a length, and it will read a
+              moment nobody chose in advance.
+            </p>
           </div>
         </div>
 
@@ -520,7 +558,17 @@ make eval           # grade the diagnosis against the planted ground truth</code
         </li>
         <li>
           <b>Quota.</b> The public demo runs on a free-tier key allowing twenty requests per
-          day per model. This is why finished investigations are replayed rather than re-run.
+          day per model. A full investigation costs about seven of them, so the daily budget is
+          roughly two complete runs shared by everyone who visits. This is why finished
+          investigations are replayed rather than re-run: opening this page costs nothing, and
+          only the buttons spend anything.
+        </li>
+        <li>
+          <b>If the quota does run out</b>, the page says so in those words and keeps working.
+          The retention curve, the cliffs, the cohort evidence and the stored investigation are
+          all ClickHouse queries and none of them touch a model, so everything except a fresh
+          run is unaffected. Reasoning and video also draw from separate pools, so a long
+          investigation cannot starve its own video reads.
         </li>
         <li>
           <b>"Unknown" is a real answer</b> and you will see it. When playback is clean and no

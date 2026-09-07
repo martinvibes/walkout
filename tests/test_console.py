@@ -43,7 +43,8 @@ SCRIPTED_ID = re.compile(r'\.id\s*=\s*"([A-Za-z0-9_-]+)"')
 # hand-maintained list of every DOM method the page happens to use.
 BARE_CALL = re.compile(r"(?<![.\w$])([a-z][A-Za-z0-9_]*)\s*\(")
 
-KEYWORDS = {"if", "for", "while", "switch", "catch", "return", "typeof", "function", "var"}
+KEYWORDS = {"if", "for", "while", "switch", "catch", "return", "typeof", "function", "var",
+            "constructor", "super"}
 # Bare `window` methods, the page calls them unqualified, as everyone does.
 BROWSER_GLOBALS = {"fetch", "setTimeout", "setInterval", "clearTimeout",
                    "clearInterval", "requestAnimationFrame", "addEventListener",

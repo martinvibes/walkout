@@ -138,14 +138,85 @@ function markdown(src) {
 
 /* --- data ---------------------------------------------------------------- */
 
+/* Every failure the server can produce arrives already described: a kind, a
+   headline, what happened and what this person can do next. The client never
+   has to guess from a status code, and there is exactly one thing to render.
+
+   The two cases the server cannot describe are handled here: the request that
+   never left the browser, and the response that is not the shape we expect. */
+
+class ApiError extends Error {
+  constructor(failure) {
+    super(failure.title || "Request failed");
+    this.failure = failure;
+  }
+}
+
+const OFFLINE = {
+  kind: "offline",
+  title: "The request never reached the server",
+  message: "The browser could not open a connection, so nothing was attempted.",
+  hint: "Check your connection and reload the page.",
+};
+
 async function getJson(url) {
-  const response = await fetch(url);
+  let response;
+  try {
+    response = await fetch(url);
+  } catch (err) {
+    throw new ApiError({ ...OFFLINE, detail: String(err) });
+  }
+
   if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`${response.status}: ${body.slice(0, 180)}`);
+    let failure = null;
+    try {
+      const body = await response.json();
+      // FastAPI nests whatever an HTTPException carried under `detail`.
+      failure = body && typeof body.detail === "object" ? body.detail : null;
+    } catch { /* an error page that is not JSON is still an error */ }
+    throw new ApiError(failure || {
+      kind: "unknown",
+      title: `The server answered ${response.status}`,
+      message: "The request failed, and the server did not say why in a way this page understands.",
+      hint: "The rest of the page is unaffected. Reloading is safe.",
+    });
   }
   return response.json();
 }
+
+/* One renderer, used by the video read, the agent stream and the hero preview,
+   so a quota error looks the same wherever a visitor happens to meet it. */
+
+const FAILURE_MARK = {
+  quota: "◴", blocked: "⊘", timeout: "◴", upstream: "◈",
+  warehouse: "▤", window: "⌖", config: "⚙", offline: "⚡", unknown: "!",
+};
+
+function failureCard(failure) {
+  const kind = failure.kind || "unknown";
+  return `
+    <div class="failure" data-kind="${escapeHtml(kind)}">
+      <div class="failure-head">
+        <span class="failure-mark">${FAILURE_MARK[kind] || "!"}</span>
+        <b>${escapeHtml(failure.title || "Something went wrong")}</b>
+      </div>
+      ${failure.message ? `<p>${escapeHtml(failure.message)}</p>` : ""}
+      ${failure.hint ? `<p class="failure-hint">${escapeHtml(failure.hint)}</p>` : ""}
+      ${failure.detail ? `
+        <details class="failure-detail">
+          <summary>What the server actually said</summary>
+          <code>${escapeHtml(failure.detail)}</code>
+        </details>` : ""}
+    </div>`;
+}
+
+// Anything thrown anywhere can be turned into a card, including a plain Error.
+const asFailure = (err) => err instanceof ApiError ? err.failure : {
+  kind: "unknown",
+  title: "Something went wrong in the browser",
+  message: String(err && err.message ? err.message : err),
+  hint: "The rest of the page is unaffected. Reloading is safe.",
+};
 
 async function loadTitles() {
   const titles = await getJson("/api/titles");
@@ -178,7 +249,8 @@ async function selectTitle(titleId) {
     renderJumps(data.cliffs);
     mountPlayer(data.title);
   } catch (err) {
-    $("#cliffs").innerHTML = `<div class="banner err">Could not reach the warehouse. ${escapeHtml(err.message)}</div>`;
+    $("#cliffs").innerHTML = failureCard(asFailure(err));
+    $("#stats").innerHTML = "";
   }
   loadLastReport(titleId);
 }
@@ -215,9 +287,18 @@ async function loadLastReport(titleId) {
   try {
     report = await getJson(`/api/agent/${titleId}/last`);
   } catch {
-    return;                       // no cached run is a normal state, not a fault
+    report = null;                // no cached run is a normal state, not a fault
   }
-  if (!report || !report.report || state.running || state.titleId !== titleId) return;
+  if (state.running) return;
+
+  if (!report || !report.report || state.titleId !== titleId) {
+    // Nothing stored yet. Say what the button will do rather than sit blank.
+    $("#trace").innerHTML = `
+      <p class="agent-empty">No investigation stored for this title yet. Press
+         <b>Investigate</b> and the agent will work through every cliff live,
+         one tool call at a time.</p>`;
+    return;
+  }
 
   const trace = $("#trace");
   trace.innerHTML = "";
@@ -240,7 +321,17 @@ async function loadLastReport(titleId) {
   $("#run").innerHTML = 'Run it again <span class="arrow">→</span>';
 }
 
+function showAgentSkeleton() {
+  if (state.running) return;
+  $("#trace").innerHTML = `
+    <div class="agent-wait">
+      <span class="reel"><i></i><i></i><i></i><i></i></span>
+      <span>Looking for the last investigation</span>
+    </div>`;
+}
+
 function showSkeletons() {
+  showAgentSkeleton();
   $("#stats").innerHTML = Array.from({ length: 4 }, () => `
     <div class="stat"><div class="k skeleton">loading</div><div class="v skeleton">000,000</div></div>
   `).join("");
@@ -425,7 +516,7 @@ async function investigateAll(cliffs) {
     investigations = await getJson(`/api/investigate/${state.titleId}`);
   } catch (err) {
     $("#previewTitle").textContent = state.title.title.title_name;
-    $("#previewRows").innerHTML = `<div class="banner err">${escapeHtml(err.message)}</div>`;
+    $("#previewRows").innerHTML = failureCard(asFailure(err));
     return;
   }
 
@@ -537,15 +628,28 @@ function runAgent() {
   const opening = addStep("__opening", null);
   const source = new EventSource(`/api/agent/${state.titleId}`);
 
-  const finish = (message, isError) => {
+  const finish = (failure) => {
     source.close();
     state.running = false;
     button.disabled = false;
     button.innerHTML = 'Investigate again <span class="arrow">→</span>';
-    $$("#trace .step").forEach((s) => s.classList.replace("running", "done"));
-    if (message) {
-      trace.insertAdjacentHTML("beforeend",
-        `<div class="banner ${isError ? "err" : "info"}">${escapeHtml(message)}</div>`);
+    $$("#trace .step").forEach((s) => {
+      s.classList.replace("running", "done");
+      if (failure) s.classList.add("stopped");
+    });
+    if (!failure) return;
+
+    trace.insertAdjacentHTML("beforeend", failureCard(failure));
+    trace.scrollTop = trace.scrollHeight;
+
+    // A run that died partway still found something, and the stored run is a
+    // real one. Offer both rather than leaving an empty panel behind a red box.
+    if (answer.trim()) {
+      verdict.hidden = false;
+      verdict.insertAdjacentHTML("afterbegin",
+        `<p class="verdict-cut">The run stopped here. What is below is as far as it got.</p>`);
+    } else {
+      loadLastReport(state.titleId);
     }
   };
 
@@ -572,12 +676,19 @@ function runAgent() {
       return;
     }
 
-    if (event.type === "error") { finish(event.message, true); return; }
-    if (event.type === "done")  { finish(null, false); }
+    if (event.type === "error") { finish(event); return; }
+    if (event.type === "done")  { finish(null); }
   };
 
   source.onerror = () => {
-    if (state.running) finish("The stream dropped. The agent may still be running on the server.", true);
+    if (!state.running) return;
+    finish({
+      kind: "offline",
+      title: "The connection to the agent dropped",
+      message: "The browser lost the stream. The run may well have carried on "
+             + "server-side, and anything it finished writing is stored.",
+      hint: "Reload the page to see whatever it managed to save.",
+    });
   };
 }
 
@@ -616,6 +727,7 @@ async function mountPlayer(title) {
     await loadPlayerApi();
   } catch {
     // Better an honest link than an empty black box.
+    $("#filmLoading")?.remove();
     $("#player").outerHTML =
       `<a class="read-idle" style="display:grid;place-items:center;height:100%"
           href="${escapeHtml(title.video_uri)}" target="_blank" rel="noopener">
@@ -626,6 +738,7 @@ async function mountPlayer(title) {
   state.player = new YT.Player("player", {
     videoId: id,
     playerVars: { modestbranding: 1, rel: 0, playsinline: 1 },
+    events: { onReady: () => { const l = $("#filmLoading"); if (l) l.remove(); } },
   });
   setInterval(showPlayhead, 500);
 }
@@ -635,32 +748,118 @@ function showPlayhead() {
   if (typeof at === "number") $("#playerNow").textContent = timecode(Math.floor(at));
 }
 
-/* Selecting a window is the one piece of shared state between the player, the
-   jump buttons and the read panel, so it lives in one function. */
-function selectWindow(cliff) {
-  state.window = { start: cliff.start_sec, end: cliff.end_sec };
-  $("#watchWindow").textContent =
-    `${cliff.start_timecode}\u2013${cliff.end_timecode}`;
+/* Choosing the window: automatic by default, manual when you want it.
+
+   The three chips are the cliffs the analysis found, which is the answer to
+   "where should I look" and therefore the right default. But the claim being
+   made is that a model can read *any* thirty seconds of this film, and a demo
+   that only ever reads three pre-chosen windows invites the obvious suspicion
+   that those three are the only ones that work. Custom removes that doubt: put
+   the playhead anywhere, take the window from it, and watch it read a moment
+   nobody prepared for.
+
+   One function owns the window, because the player, the chips, the manual
+   fields and the read panel all have to agree on it. */
+
+const WATCH_MAX_SEC = 60;
+
+function parseTimecode(text) {
+  const parts = String(text).trim().split(":").map((n) => Number(n));
+  if (!parts.length || parts.some((n) => !Number.isFinite(n) || n < 0)) return null;
+  return parts.reduce((total, n) => total * 60 + n, 0);
+}
+
+function runtime() {
+  return Number(state.title?.title?.duration_sec) || 0;
+}
+
+function setWindow(start, end, id, { seek = false } = {}) {
+  const limit = runtime();
+  start = Math.max(0, Math.round(start));
+  end = Math.round(end);
+  if (limit) end = Math.min(end, limit);
+  if (end - start > WATCH_MAX_SEC) end = start + WATCH_MAX_SEC;
+
+  state.window = { start, end, id };
+  $("#watchWindow").textContent = `${timecode(start)}\u2013${timecode(end)}`;
   $$("#jumps .jump-chip").forEach((chip) => {
-    chip.setAttribute("aria-pressed", String(chip.dataset.id === cliff.cliff_id));
+    chip.setAttribute("aria-pressed", String(chip.dataset.id === id));
   });
-  if (state.player?.seekTo) {
-    state.player.seekTo(cliff.start_sec, true);
+  $("#manual").hidden = id !== "custom";
+
+  if (seek && state.player?.seekTo) {
+    state.player.seekTo(start, true);
     state.player.playVideo?.();
   }
 }
 
+function selectWindow(cliff) {
+  setWindow(cliff.start_sec, cliff.end_sec, cliff.cliff_id, { seek: true });
+}
+
+/* The manual fields read as one control: a start and a length. Length is a
+   fixed set rather than a free number because the server caps the window at
+   sixty seconds anyway, and a select cannot be typed into wrongly. */
+function applyManual({ seek = false } = {}) {
+  const start = parseTimecode($("#manualStart").value);
+  const length = Number($("#manualLen").value);
+  const note = $("#manualNote");
+  const limit = runtime();
+
+  if (start === null) {
+    note.textContent = "Write the start as m:ss, like 4:10.";
+    note.hidden = false;
+    return;
+  }
+  if (limit && start >= limit) {
+    note.textContent = `The film is ${timecode(limit)} long.`;
+    note.hidden = false;
+    return;
+  }
+  note.hidden = true;
+  setWindow(start, start + length, "custom", { seek });
+}
+
+function usePlayhead() {
+  const at = state.player?.getCurrentTime?.();
+  if (typeof at !== "number") return;
+  $("#manualStart").value = timecode(Math.floor(at)).slice(3);   // m:ss
+  applyManual();
+}
+
+function initManual() {
+  $("#manualStart").addEventListener("change", () => applyManual({ seek: true }));
+  $("#manualStart").addEventListener("input", () => applyManual());
+  $("#manualLen").addEventListener("change", () => applyManual());
+  $("#manualNow").addEventListener("click", usePlayhead);
+}
+
 function renderJumps(cliffs) {
-  $("#jumps").innerHTML = cliffs.map((c) => `
+  const chips = cliffs.map((c) => `
     <button class="jump-chip" data-id="${c.cliff_id}" aria-pressed="false"
             title="Jump the film to ${c.start_timecode}"><i></i>${c.start_timecode.slice(3)}</button>
   `).join("");
+
+  $("#jumps").innerHTML = chips + `
+    <button class="jump-chip custom" data-id="custom" aria-pressed="false"
+            title="Read any window you like">Custom</button>`;
+
   $$("#jumps .jump-chip").forEach((chip) => {
     chip.addEventListener("click", () => {
+      if (chip.dataset.id === "custom") {
+        // Seed it from wherever the film is sitting, so the first thing you
+        // see is a window around the frame you were already looking at.
+        const at = state.player?.getCurrentTime?.();
+        $("#manualStart").value = timecode(Math.floor(typeof at === "number" ? at : 0)).slice(3);
+        applyManual();
+        $("#manualStart").focus();
+        return;
+      }
       const cliff = cliffs.find((c) => c.cliff_id === chip.dataset.id);
       if (cliff) selectWindow(cliff);
     });
   });
+
   if (cliffs.length) selectWindow(cliffs[0]);
 }
 
@@ -679,8 +878,7 @@ async function watchWindow() {
       `/api/watch/${state.titleId}?start=${start}&end=${end}`);
     $("#reading").innerHTML = renderReading(reading);
   } catch (err) {
-    $("#reading").innerHTML =
-      `<div class="banner err">${escapeHtml(err.message)}</div>`;
+    $("#reading").innerHTML = failureCard(asFailure(err));
   } finally {
     stopWaiting();
     state.watching = false;
@@ -780,6 +978,7 @@ loadTitles();
 
 $("#run").addEventListener("click", runAgent);
 $("#watch").addEventListener("click", watchWindow);
+initManual();
 $("#jump").addEventListener("click", () => {
   $("#console").scrollIntoView({ behavior: "smooth", block: "start" });
 });

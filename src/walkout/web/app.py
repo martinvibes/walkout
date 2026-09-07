@@ -21,14 +21,20 @@ from contextlib import asynccontextmanager
 from pathlib import Path
 from typing import Any, AsyncIterator
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
-from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
+from fastapi.responses import (
+    FileResponse,
+    HTMLResponse,
+    JSONResponse,
+    StreamingResponse,
+)
 from fastapi.staticfiles import StaticFiles
 
 from .. import analysis, reports
 from ..config import ConfigError, google
+from ..errors import describe
 from ..detection import recoverable_watch_hours
 from ..mcp_warehouse import McpWarehouse
 from ..models import timecode
@@ -113,10 +119,45 @@ def _title_or_404(title_id: str) -> dict[str, Any]:
     try:
         rows = warehouse().run_named("title", {"title_id": title_id})
     except ConfigError as exc:
-        raise HTTPException(500, f"configuration: {exc}") from exc
+        raise HTTPException(500, describe(exc).payload()) from exc
+    except Exception as exc:  # noqa: BLE001 (a sleeping cluster lands here)
+        failure = describe(exc)
+        raise HTTPException(failure.status, failure.payload()) from exc
     if not rows:
         raise HTTPException(404, f"no title {title_id!r}")
     return rows[0]
+
+
+@app.exception_handler(Exception)
+async def unhandled(_request: Request, exc: Exception) -> JSONResponse:
+    """Nothing reaches the browser as a bare 500.
+
+    Starlette's default is the string "Internal Server Error", which tells a
+    visitor nothing and a judge less. Every escape route ends up described.
+    """
+    failure = describe(exc)
+    return JSONResponse(status_code=failure.status, content={"detail": failure.payload()})
+
+
+def _bad_window(start: int, end: int, duration: int) -> dict[str, Any]:
+    """Why a requested window was refused, in the shape the client renders."""
+    if end <= start:
+        why = "the end of the window has to come after the start"
+    elif end - start > MAX_WATCH_SEC:
+        why = f"windows are capped at {MAX_WATCH_SEC} seconds"
+    else:
+        why = f"the window has to sit inside the runtime, 0 to {duration} seconds"
+    return {
+        "kind": "window",
+        "title": "That window will not work",
+        "message": f"Reading {start}s to {end}s was refused because {why}.",
+        "hint": (
+            "Reading video is the expensive call in the system, so the cap keeps "
+            "one curious click from spending the day's budget."
+        ),
+        "status": 422,
+        "detail": f"start={start} end={end} duration={duration}",
+    }
 
 
 @app.get("/api/titles")
@@ -249,7 +290,9 @@ async def _agent_events(title_id: str, question: str | None) -> AsyncIterator[st
         complete = True
         yield event("done")
     except Exception as exc:  # noqa: BLE001 (the browser deserves the reason)
-        yield event("error", message=f"{type(exc).__name__}: {exc}")
+        # Whatever partial work exists is still saved below; the browser gets
+        # the reason in the same shape the JSON endpoints use.
+        yield event("error", **describe(exc).payload())
     finally:
         # Also on the failure path, and also when the browser goes away. A run
         # that died on the last cliff still found the first two, and throwing
@@ -299,17 +342,14 @@ def watch(title_id: str, start: int, end: int) -> dict[str, Any]:
     title = _title_or_404(title_id)
     duration = int(title["duration_sec"])
 
-    if end <= start:
-        raise HTTPException(422, "end must be after start")
-    if end - start > MAX_WATCH_SEC:
-        raise HTTPException(422, f"window must be {MAX_WATCH_SEC} seconds or shorter")
-    if start < 0 or end > duration:
-        raise HTTPException(422, f"window must sit inside the runtime (0-{duration}s)")
+    if end <= start or start < 0 or end > duration or end - start > MAX_WATCH_SEC:
+        raise HTTPException(422, _bad_window(start, end, duration))
 
     try:
         reading = watch_window(str(title["video_uri"]), start, end)
     except Exception as exc:  # noqa: BLE001 (quota and safety blocks both land here)
-        raise HTTPException(502, f"{type(exc).__name__}: {exc}") from exc
+        failure = describe(exc)
+        raise HTTPException(failure.status, failure.payload()) from exc
     return reading.to_dict()
 
 

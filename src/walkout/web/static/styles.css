@@ -1290,3 +1290,334 @@ h1, h2, h3, h4, h5,
 .headline, .brand, .stat .v, .cliff-time, .preview-count {
   font-family: var(--display);
 }
+
+/* ===========================================================================
+   Method: the panel that turns over
+   ===========================================================================
+   Everything above this point is the product. This is the explanation, and
+   flipping the ground is how a reader knows they have crossed from one to the
+   other without being told so. It works because every colour on the page comes
+   from a token: redefining them here turns the whole section over at once,
+   children included, with no per-element overrides to keep in sync.
+
+   It inverts in both directions. A light page gets a dark panel, a dark page
+   gets a light one, so the section is deliberately the odd one out either way
+   rather than only looking considered in the theme it was designed in.
+   =========================================================================== */
+
+.how {
+  position: relative;
+  overflow: hidden;
+  padding: clamp(76px, 9vw, 122px) 0;
+  border-top: 0;
+
+  --ground:       #0B0B0D;
+  --surface:      #141418;
+  --surface-sunk: #0F0F13;
+  --line:         #24242C;
+  --line-strong:  #383842;
+  --ink:          #FBFBFA;
+  --ink-soft:     #B7B7C2;
+  --ink-faint:    #8C8C99;
+  --brand:        #FBFBFA;
+  --on-brand:     #0B0B0D;
+  --accent:       #8AA6FF;
+  --shadow:    0 4px 30px -10px rgba(0, 0, 0, .8);
+  --shadow-lg: 0 30px 80px -30px rgba(0, 0, 0, .95);
+
+  background: var(--ground);
+  color: var(--ink);
+}
+
+:root[data-theme="dark"] .how {
+  --ground:       #FAFAF8;
+  --surface:      #FFFFFF;
+  --surface-sunk: #F1F1EE;
+  --line:         #E3E2DD;
+  --line-strong:  #CDCCC6;
+  --ink:          #101013;
+  --ink-soft:     #494950;
+  --ink-faint:    #6D6D76;
+  --brand:        #101013;
+  --on-brand:     #FAFAF8;
+  --accent:       #2B55F5;
+  --shadow:    0 4px 24px -8px rgba(18, 18, 15, .14);
+  --shadow-lg: 0 24px 70px -24px rgba(18, 18, 15, .2);
+}
+
+/* A light thrown from above the fold of the section, and a faint rule grid
+   under it. Both are pure CSS and cost nothing to paint. */
+.how::before {
+  content: "";
+  position: absolute;
+  inset: -30% -20% auto -20%;
+  height: 80%;
+  background: radial-gradient(52% 62% at 50% 0%,
+              color-mix(in srgb, var(--accent) 20%, transparent), transparent 72%);
+  pointer-events: none;
+}
+
+.how::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--line) 1px, transparent 1px);
+  background-size: 68px 68px;
+  opacity: .5;
+  -webkit-mask-image: radial-gradient(70% 55% at 50% 30%, #000, transparent 78%);
+  mask-image: radial-gradient(70% 55% at 50% 30%, #000, transparent 78%);
+  pointer-events: none;
+}
+
+.how > .shell { position: relative; z-index: 1; }
+
+.how .how-lede { font-size: 17px; }
+
+/* --- the four steps ------------------------------------------------------ */
+
+.how-grid { gap: 14px; margin-top: 40px; }
+
+.how-card {
+  padding: 28px 26px 30px;
+  background: color-mix(in srgb, var(--surface) 82%, transparent);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border: 1px solid var(--line);
+  transition: transform .5s var(--ease), box-shadow .5s var(--ease),
+              border-color .3s var(--ease-soft);
+}
+
+/* An accent rule that draws itself across the top of the card you are on. */
+.how-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 2px;
+  background: linear-gradient(90deg, var(--accent), transparent);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform .5s var(--ease);
+}
+
+.how-card:hover {
+  transform: translateY(-6px);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  box-shadow: var(--shadow-lg);
+}
+.how-card:hover::before { transform: scaleX(1); }
+
+.how-card .n {
+  display: block;
+  font-family: var(--display);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: -.03em;
+  line-height: 1;
+  color: var(--accent);
+}
+
+/* The same numeral again, oversized and nearly invisible, so the card has
+   depth without another element in the markup. */
+.how-card .n::after {
+  content: attr(data-ghost);
+  position: absolute;
+  right: 14px;
+  bottom: -22px;
+  font-size: 128px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -.06em;
+  color: color-mix(in srgb, var(--ink) 4%, transparent);
+  pointer-events: none;
+}
+
+.how-card h4 { font-size: 18.5px; margin: 14px 0 10px; }
+.how-card p { font-size: 14.5px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .how-card, .how-card::before { transition: none; }
+  .how-card:hover { transform: none; }
+}
+
+/* ===========================================================================
+   Failures, described
+   ===========================================================================
+   The most likely failure here is not a bug: it is the free-tier quota running
+   out because several people pressed the same button on the same day. A raw
+   `429 RESOURCE_EXHAUSTED` reads as a broken product; the same condition, told
+   as a sentence with a way forward, reads as a product with a known limit.
+   Every error path on the page renders through this one card.
+   =========================================================================== */
+
+.failure {
+  padding: 18px 20px;
+  border-radius: var(--radius);
+  border: 1px solid color-mix(in srgb, var(--tone) 34%, var(--line));
+  background: color-mix(in srgb, var(--tone) var(--tint), var(--surface));
+  --tone: var(--ink-faint);
+  animation: watch-in .4s var(--ease) both;
+}
+
+.failure[data-kind="quota"]     { --tone: var(--cause-localization); }
+.failure[data-kind="blocked"]   { --tone: var(--cause-pacing); }
+.failure[data-kind="timeout"],
+.failure[data-kind="upstream"]  { --tone: var(--cause-technical); }
+.failure[data-kind="warehouse"],
+.failure[data-kind="config"],
+.failure[data-kind="offline"],
+.failure[data-kind="unknown"]   { --tone: var(--danger); }
+.failure[data-kind="window"]    { --tone: var(--cause-unknown); }
+
+.failure-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 9px;
+  font-size: 15px;
+  letter-spacing: -.012em;
+  color: var(--ink);
+}
+.failure-head b { font-weight: 600; }
+
+.failure-mark {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--tone) 20%, transparent);
+  color: var(--tone);
+  font-size: 13px;
+  line-height: 1;
+}
+
+.failure p { margin: 0 0 9px; font-size: 13.5px; line-height: 1.65; color: var(--ink-soft); }
+.failure p:last-of-type { margin-bottom: 0; }
+.failure-hint { color: var(--ink-faint) !important; }
+
+.failure-detail { margin-top: 12px; }
+.failure-detail summary {
+  cursor: pointer;
+  font-size: 12.5px;
+  color: var(--ink-faint);
+  list-style: none;
+}
+.failure-detail summary::-webkit-details-marker { display: none; }
+.failure-detail summary::before { content: "▸ "; }
+.failure-detail[open] summary::before { content: "▾ "; }
+.failure-detail code {
+  display: block;
+  margin-top: 8px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  background: var(--surface-sunk);
+  font: 500 11.5px/1.55 var(--mono);
+  color: var(--ink-faint);
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* A step the run never got to finish reads differently from one that passed. */
+.step.stopped .dot { background: var(--ink-faint); opacity: .45; }
+
+.verdict-cut {
+  margin: 0 0 14px;
+  padding-bottom: 12px;
+  border-bottom: 1px dashed var(--line-strong);
+  font-size: 13px;
+  color: var(--cause-localization);
+}
+
+/* ===========================================================================
+   Waiting, everywhere it happens
+   =========================================================================== */
+
+.film-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: var(--surface-sunk);
+  font-size: 13px;
+  color: var(--ink-faint);
+}
+
+.agent-wait,
+.agent-empty {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 2px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--ink-faint);
+}
+.agent-empty { display: block; padding: 14px 2px; }
+.agent-empty b { color: var(--ink); font-weight: 600; }
+
+/* ===========================================================================
+   Reading a window you chose yourself
+   ===========================================================================
+   The three chips are the cliffs the analysis found, which is the right
+   default. Custom exists because the claim is that the model reads *any*
+   thirty seconds of this film, and a demo that only ever reads three prepared
+   windows invites the obvious suspicion about those three.
+   =========================================================================== */
+
+.jump-chip.custom { font-family: var(--sans); font-weight: 600; letter-spacing: 0; }
+
+.manual {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 13px 16px;
+  border-top: 1px solid var(--line);
+  background: var(--surface-sunk);
+  animation: watch-in .3s var(--ease) both;
+}
+
+.manual-label {
+  margin-right: 2px;
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+}
+
+.manual-field {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: 12.5px;
+  color: var(--ink-faint);
+}
+
+.manual-field input,
+.manual-field select {
+  padding: 6px 9px;
+  border: 1px solid var(--line-strong);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--ink);
+  font: 500 13px/1 var(--mono);
+}
+.manual-field input { width: 68px; text-align: center; }
+.manual-field select { font-family: var(--sans); }
+.manual-field input:focus-visible,
+.manual-field select:focus-visible { outline: 2px solid var(--ink); outline-offset: 1px; }
+
+.btn.tiny { padding: 7px 13px; font-size: 12.5px; }
+
+.manual-note { font-size: 12.5px; color: var(--danger); }
