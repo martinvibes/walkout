@@ -1,4 +1,4 @@
-"""Walkout -- scene-level abandonment forensics.
+"""Walkout: scene-level abandonment forensics.
 
 Every platform knows *when* viewers stop watching. Walkout works out *why*, by
 joining playback telemetry at scale (ClickHouse) with what is actually on screen

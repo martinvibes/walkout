@@ -2,7 +2,7 @@
 
 An investigation costs about ten model calls, and a free-tier key is capped per
 day. Without somewhere to keep the result, the second person to open the page
-gets a quota error instead of a product -- so every run is written back to
+gets a quota error instead of a product, so every run is written back to
 ClickHouse and replayed until someone asks for a fresh one.
 
 Reads go through whatever warehouse the caller has, which for the agent means
@@ -69,8 +69,8 @@ def save(title_id: str, model: str, report: str, trace: list[dict[str, Any]],
          complete: bool, duration_ms: int) -> None:
     """Write a run back to the warehouse.
 
-    A run that died partway is still worth keeping -- the cliffs it did reach
-    are real findings -- but it is stored with `complete = 0` and the page says
+    A run that died partway is still worth keeping (the cliffs it did reach
+    are real findings), but it is stored with `complete = 0` and the page says
     so. A truncated report presented as a finished one would be worse than an
     empty panel.
 
@@ -88,5 +88,5 @@ def save(title_id: str, model: str, report: str, trace: list[dict[str, Any]],
             column_names=["title_id", "model", "report", "trace", "complete",
                           "duration_ms", "created_at"],
         )
-    except Exception:  # noqa: BLE001 -- the run already succeeded; this is a cache
+    except Exception:  # noqa: BLE001 (the run already succeeded; this is a cache)
         pass

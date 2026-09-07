@@ -33,7 +33,7 @@ def clickhouse_toolset() -> MCPToolset:
     """Direct read access to the cluster through the official MCP server.
 
     The fixed tools cover the investigation itself. This is for the questions
-    that come after it -- the ones a person asks when they have read the
+    that come after it, the ones a person asks when they have read the
     finding and want to know one more thing.
     """
     return MCPToolset(

@@ -5,7 +5,7 @@ no model involved: where the walk-out is, who it hit, and whether playback was
 healthy through it. The result is an evidence packet.
 
 The split matters. This layer *proposes* a cause from the numbers and can never
-invent one -- every figure it reports came out of ClickHouse. Gemini then does
+invent one; every figure it reports came out of ClickHouse. Gemini then does
 the two things telemetry cannot: watch what is actually on screen in that
 window, and decide whether the footage agrees with the numbers. A model that is
 handed the evidence and asked to adjudicate is doing something it is good at;
@@ -207,7 +207,7 @@ def _measure_playback(
 def playback_baseline(warehouse: Warehouse, title_id: str) -> dict[str, float]:
     """Each delivery cohort's rebuffering across the whole title.
 
-    Per title, not per cliff -- the cliffs are compared against it, so
+    Per title, not per cliff, the cliffs are compared against it, so
     refetching it for each one is the same answer at three times the cost.
     """
     return {
@@ -244,7 +244,7 @@ def _describe(result: Investigation) -> list[str]:
         )
     if not delivery and not audience:
         lines.append(
-            "No cohort is over-represented -- every device, build, region and language "
+            "No cohort is over-represented: every device, build, region and language "
             "left at the same rate. Whatever happened, it happened to everyone."
         )
 

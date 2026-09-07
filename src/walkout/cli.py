@@ -32,7 +32,7 @@ def load(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="walkout-load")
     parser.add_argument(
         "--reset", action="store_true",
-        help="drop the tables first -- destroys all loaded telemetry",
+        help="drop the tables first, destroys all loaded telemetry",
     )
     args = parser.parse_args(argv)
 
@@ -163,7 +163,7 @@ def doctor(argv: list[str] | None = None) -> int:
     try:
         client = ch.connect(config)
         version = client.command("SELECT version()")
-    except Exception as exc:  # noqa: BLE001 -- surface whatever the driver says
+    except Exception as exc:  # noqa: BLE001 (surface whatever the driver says)
         print(f"  connection failed: {exc}", file=sys.stderr)
         return 1
     print(f"  connected, server {version}")

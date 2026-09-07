@@ -7,9 +7,9 @@ answered with a number instead of a vibe.
 
 Two failure modes are graded separately, because they cost different things:
 
-* a **miss** -- a real cliff the detector never surfaced. Silent, and the worst
+* a **miss**, a real cliff the detector never surfaced. Silent, and the worst
   kind: the product simply fails to do its job and no one knows.
-* a **false positive** -- a finding with nothing behind it. Louder and cheaper
+* a **false positive**, a finding with nothing behind it. Louder and cheaper
   to catch, but it is what destroys trust in a tool like this. The decoy exists
   to make sure ordinary noise never gets promoted into a recommendation.
 """
@@ -73,7 +73,7 @@ class Report:
 
 # Which proposed causes count as correct for each planted cause. Telemetry
 # alone cannot prove a story problem, so UNKNOWN is an acceptable proposal
-# there -- that is the handoff to the model, by design.
+# there; that is the handoff to the model, by design.
 ACCEPTABLE = {
     "story": {Cause.UNKNOWN, Cause.STORY, Cause.PACING},
     "technical": {Cause.TECHNICAL},

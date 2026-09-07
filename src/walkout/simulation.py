@@ -3,7 +3,7 @@
 
 Real platforms will point Walkout at their own event stream. For the demo we
 synthesise one, because a public dataset of scene-level walk-outs does not
-exist -- and because planting cliffs with *known causes* is the only way to
+exist, and because planting cliffs with *known causes* is the only way to
 measure whether the agent's diagnosis is actually right (see eval.py).
 
 Three cliffs are planted, one per cause class, plus one decoy dip that sits
@@ -73,11 +73,11 @@ VERSION_P = [0.25, 0.35, 0.40]
 # dialogue-dependent one. Planting a story cliff over the dragon chase would
 # have produced a demo where the numbers and the picture contradict each other.
 CLIFFS = [
-    # 03:40-04:10 -- Sintel prepares for bed. Static shots, no score, no dialogue.
+    # 03:40-04:10, Sintel prepares for bed. Static shots, no score, no dialogue.
     {"id": "A", "cause": "story",        "start": 220, "end": 250, "mult": 3.1},
-    # 09:20-10:00 -- content-independent; a delivery failure can land anywhere.
+    # 09:20-10:00, content-independent; a delivery failure can land anywhere.
     {"id": "B", "cause": "technical",    "start": 560, "end": 600, "mult": 9.0},
-    # 02:05-02:35 -- the shaman scene. The plot goal is established entirely in
+    # 02:05-02:35, the shaman scene. The plot goal is established entirely in
     # spoken English; a viewer who cannot follow it is simply lost.
     {"id": "C", "cause": "localization", "start": 125, "end": 155, "mult": 4.0},
     # A mild universal dip that must stay below the significance floor.
@@ -125,7 +125,7 @@ def build_chunk(rng: np.random.Generator, n: int, steps: int, t0: datetime):
     cohort_c = needs_subs & (sub_lang == "")
 
     # Everyone leaves when the credits roll. That is not a defect and the
-    # detector must never report it, but the data has to contain it -- a
+    # detector must never report it, but the data has to contain it; a
     # simulator that omits it would be quietly grading its own homework.
     h[:, pos >= TITLE["credits_start_sec"]] *= 12.0
 
@@ -191,7 +191,7 @@ def generate(
 ) -> dict[str, Any]:
     """Simulate `sessions` viewings, handing each chunk to `on_chunk`.
 
-    Chunked so a run of any size stays inside a fixed memory budget -- 250k
+    Chunked so a run of any size stays inside a fixed memory budget; 250k
     sessions is roughly 14M events, which is not something to hold in a list.
     """
     rng = np.random.default_rng(seed)

@@ -1,7 +1,7 @@
 """Turning flagged buckets into cliffs a human can act on.
 
 The SQL flags individual ten-second buckets. A real walk-out is rarely one
-bucket -- a scene that loses the room loses it over twenty or thirty seconds --
+bucket (a scene that loses the room loses it over twenty or thirty seconds),
 so consecutive flags belong to the same event and have to be merged before any
 of them reach the model. Without this the agent investigates the same scene
 three times and reports it three times.
@@ -32,7 +32,7 @@ def merge_cliffs(
     Combined statistics are composed properly rather than averaged:
 
     * hazard over the merged window is the chance a viewer present at the start
-      leaves before the end -- ``1 - prod(1 - h_i)`` -- not the mean of the
+      leaves before the end, ``1 - prod(1 - h_i)``, not the mean of the
       per-bucket hazards, which would understate a long cliff.
     * significance is a binomial z-test over the summed window, since the sum
       of independent binomials is what we actually observed.
@@ -119,7 +119,7 @@ def rank_cohorts(
 
 def is_concentrated(signals: Sequence[CohortSignal], threshold: float = 2.0) -> bool:
     """True when the walk-out is confined to specific cohorts rather than the
-    whole audience -- the first fork in the story-versus-technical decision."""
+    whole audience, the first fork in the story-versus-technical decision."""
     return bool(signals) and signals[0].concentration >= threshold
 
 

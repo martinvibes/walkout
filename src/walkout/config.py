@@ -1,7 +1,7 @@
 """Runtime configuration, resolved once from the environment.
 
 Every credential lives here so nothing else in the codebase reads os.environ
-directly -- which keeps secrets out of tool signatures and out of prompts.
+directly, which keeps secrets out of tool signatures and out of prompts.
 """
 
 from __future__ import annotations
@@ -54,8 +54,8 @@ class ClickHouseConfig:
 
 
 # Orchestration and video understanding run on separate models on purpose.
-# They want different things -- one is a fast reasoner making a dozen short
-# calls, the other reads video once and carefully -- and on the free tier the
+# They want different things: one is a fast reasoner making a dozen short
+# calls, the other reads video once and carefully. On the free tier the
 # request quota is counted per model, so separating them also stops a long
 # investigation from starving its own video reads.
 DEFAULT_MODEL = "gemini-3.5-flash"
@@ -64,7 +64,7 @@ DEFAULT_VISION_MODEL = "gemini-3.6-flash"
 
 @dataclass(frozen=True)
 class GoogleConfig:
-    """Which models to use, and -- in Vertex mode only -- where to reach them.
+    """Which models to use, and (in Vertex mode only) where to reach them.
 
     There are two backends. With an API key, a project is neither needed nor
     read; with Vertex, the SDK picks `GOOGLE_CLOUD_PROJECT` up from the

@@ -1,7 +1,7 @@
 """One Gemini client, configured once.
 
 Retries live here rather than at each call site because an investigation is a
-dozen model calls deep -- three of them video reads issued at the same moment --
+dozen model calls deep (three of them video reads issued at the same moment),
 and a shared model under load answers 503 to whichever call happens to arrive
 during the spike. Losing an entire run to one transient refusal is unacceptable
 in front of an audience, and worse in production.

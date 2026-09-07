@@ -10,7 +10,7 @@ carry all of that.
 Have the cluster loaded. From your laptop, once:
 
 ```bash
-make load        # safe to repeat -- creates anything missing, deletes nothing
+make load        # safe to repeat, creates anything missing, deletes nothing
 make simulate    # ~4 minutes, 13.1M events
 make doctor      # should print the row count
 ```
@@ -63,13 +63,13 @@ The deployed app reads the same cluster, so this is done once, not per deploy.
 
 The log says which of the two dependencies is unhappy.
 
-- `CLICKHOUSE_PASSWORD is not set` — a variable did not save. Re-paste in the
+- `CLICKHOUSE_PASSWORD is not set`: a variable did not save. Re-paste in the
   RAW editor and redeploy.
-- A connection timeout — ClickHouse Cloud idles a service that has not been
+- A connection timeout: ClickHouse Cloud idles a service that has not been
   queried for a while and takes ~30s to wake. The restart policy retries three
   times, which is normally enough; if not, open the cluster in the ClickHouse
   console once to wake it and redeploy.
-- `events: 0` with `ok: true` — the cluster is reachable but empty. Run
+- `events: 0` with `ok: true` means the cluster is reachable but empty. Run
   `make simulate` from your laptop against the same credentials.
 
 ## Quota
@@ -80,6 +80,6 @@ from `walkout.agent_reports` instead of running a new one on every visit, and
 only spends calls when someone presses the button.
 
 If the button starts returning quota errors, either wait for the daily reset or
-point `WALKOUT_MODEL` at another model — each has its own daily pool. Setting
+point `WALKOUT_MODEL` at another model, since each has its own daily pool. Setting
 `WALKOUT_MODEL=gemini-3.7-flash` in Railway variables is a one-line fix that
 takes effect on the next deploy.

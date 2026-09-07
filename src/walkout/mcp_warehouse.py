@@ -31,8 +31,8 @@ from .warehouse import Row, prepare, render
 
 SERVER_COMMAND = "mcp-clickhouse"
 # The MCP server is a separate process, so it gets a separate environment. It
-# is built on fastmcp, which needs mcp 2.x, while ADK needs mcp 1.x -- a
-# conflict that only exists if you insist on one interpreter for both. Keeping
+# is built on fastmcp, which needs mcp 2.x, while ADK needs mcp 1.x. That
+# conflict only exists if you insist on one interpreter for both. Keeping
 # them apart also keeps this project's own dependency tree Google-only.
 STARTUP_TIMEOUT_SEC = 60.0
 QUERY_TIMEOUT_SEC = 180.0
@@ -109,7 +109,7 @@ class McpWarehouse:
         self._session: ClientSession | None = None
         self._lock = threading.Lock()
 
-    # -- lifecycle -------------------------------------------------------
+    # lifecycle ----------------------------------------------------------
 
     def start(self) -> None:
         """Launch the server and complete the MCP handshake. Idempotent."""
@@ -171,7 +171,7 @@ class McpWarehouse:
     def __exit__(self, *_exc: Any) -> None:
         self.close()
 
-    # -- queries ---------------------------------------------------------
+    # queries ------------------------------------------------------------
 
     def call(self, tool: str, arguments: dict[str, Any]) -> str:
         """Call any tool the server exposes and return its text payload."""

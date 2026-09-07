@@ -23,9 +23,9 @@ def timecode(seconds: int) -> str:
 class Cause(str, Enum):
     """Why an audience walked out. The whole product turns on this call."""
 
-    STORY = "story"                  # the scene isn't holding -- recut
+    STORY = "story"                  # the scene isn't holding, recut
     PACING = "pacing"                # the scene works but runs long
-    TECHNICAL = "technical"          # rebuffering / bitrate / player bug -- do NOT recut
+    TECHNICAL = "technical"          # rebuffering / bitrate / player bug, do NOT recut
     LOCALIZATION = "localization"    # missing subtitles or dub for the audience present
     AD_BREAK = "ad_break"            # the interruption, not the content
     UNKNOWN = "unknown"              # evidence was inconclusive; say so rather than guess

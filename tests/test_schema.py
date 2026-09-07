@@ -1,6 +1,6 @@
 """The schema must be safe to apply to a cluster that already has data.
 
-`make load` reads as a setup step -- it is the obvious thing to run on a new
+`make load` reads as a setup step; it is the obvious thing to run on a new
 deploy, and the README describes it as applying the schema. An earlier version
 opened each table with DROP TABLE IF EXISTS, so running it destroyed thirteen
 million rows without saying anything. It happened twice before anyone noticed
@@ -51,7 +51,7 @@ def test_trailing_comment_with_a_semicolon_does_not_split() -> None:
     """The natural way to write a note next to a column, and a trap.
 
     `-- see #12; fixed` ends a statement early if comments are stripped after
-    splitting rather than before -- the same failure that once made the schema
+    splitting rather than before, the same failure that once made the schema
     unloadable, moved from a whole-line comment to a trailing one.
     """
     sql = "CREATE TABLE t (a String,  -- see #12; fixed\n b String);"

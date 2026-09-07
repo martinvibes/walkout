@@ -2,7 +2,7 @@
 
 Queries live in sql/queries/*.sql rather than in Python string literals so they
 stay reviewable, diffable, and runnable by hand against the cluster. Every
-parameter is bound by ClickHouse, never interpolated -- the model chooses
+parameter is bound by ClickHouse, never interpolated: the model chooses
 *values*, never SQL.
 """
 

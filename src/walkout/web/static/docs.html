@@ -3,11 +3,11 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Walkout — documentation</title>
+<title>Walkout: documentation</title>
 <meta name="description" content="What Walkout is, who it is for, what it needs to run, and how it decides why an audience stopped watching.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;450;500;600&family=Inter+Tight:wght@500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="/static/styles.css">
 <link rel="stylesheet" href="/static/docs.css">
 <link rel="icon" type="image/svg+xml" href="/static/favicon.svg">
@@ -132,8 +132,8 @@
 
       <ol class="steps">
         <li>
-          <b>Playback telemetry.</b> The stream of events a player already emits — started,
-          still watching at 04:08, buffered, quit — one row per viewer per ten seconds. This
+          <b>Playback telemetry.</b> The stream of events a player already emits (started,
+          still watching at 04:08, buffered, quit), one row per viewer per ten seconds. This
           is the same data behind any retention chart, so a platform that can draw one already
           has it. Walkout reads it from ClickHouse.
         </li>
@@ -145,7 +145,7 @@
 
       <p class="callout">
         The telemetry is the part that cannot be substituted. Where an audience left is not
-        information that exists in the picture — it exists only in the audience.
+        information that exists in the picture; it exists only in the audience.
       </p>
     </section>
 
@@ -181,7 +181,7 @@
           ten-second bucket Walkout measures the share of people <i>still watching</i> who quit
           there, and compares it against what this title normally loses. Every film has a slow
           leak; only the cliffs are interesting. Someone who watched to the end is not counted
-          as having left, and the end credits are excluded entirely — an audience leaving as
+          as having left, and the end credits are excluded entirely, because an audience leaving as
           the credits roll has finished the film.
         </li>
         <li>
@@ -196,7 +196,7 @@
           Gemini watches those exact seconds of the real film and reports what is happening:
           a synopsis, a beat-by-beat with timecodes, how it is paced, whether anyone is
           speaking, whether the picture itself looks broken. <b>It is never told that anyone
-          walked out there</b>, which is the whole point — when it independently flags the same
+          walked out there</b>, which is the whole point: when it independently flags the same
           moment, that is corroboration rather than an echo.
         </li>
         <li>
@@ -256,7 +256,7 @@
           <tr>
             <td>Flat across every group, playback clean, and the footage reads as fine</td>
             <td><span class="v" style="--tag:var(--cause-unknown)">Unknown</span></td>
-            <td>Nobody yet — and it says so rather than inventing a cause.</td>
+            <td>Nobody yet, and it says so rather than inventing a cause.</td>
           </tr>
         </tbody>
       </table>
@@ -281,7 +281,7 @@
             <h4>Where they left</h4>
             <p>
               The dark line is how much of the audience is still watching. The filled area is
-              the quit rate — out of everyone still watching, the share who stopped in each ten
+              the quit rate: out of everyone still watching, the share who stopped in each ten
               seconds. Shaded bands are the cliffs Walkout considers significant, which means
               they cleared both a size threshold and a statistical one, so a small spike on a
               handful of viewers does not qualify.
@@ -303,7 +303,7 @@
             </p>
             <p>
               <b>Watch this moment</b> sends that window to Gemini, which reads it blind and
-              reports back. Windows are capped at sixty seconds — reading video is the expensive
+              reports back. Windows are capped at sixty seconds, because reading video is the expensive
               call, and this keeps a curious visitor from spending the day's budget in one click.
             </p>
           </div>
@@ -315,7 +315,7 @@
             <h4>Why they left</h4>
             <p>
               One card per cliff: the timecode, how much worse than normal it was, the verdict,
-              and the watch hours at stake. Open a card for the evidence in sentences — which
+              and the watch hours at stake. Open a card for the evidence in sentences: which
               group over-indexed, by how much, and what playback was doing.
             </p>
             <p>
@@ -336,7 +336,7 @@
         calls.
       </p>
       <p>
-        It has three purpose-built tools — find the walk-outs, investigate one, watch one — and
+        It has three purpose-built tools (find the walk-outs, investigate one, watch one) and
         direct read-only access to the warehouse through the official ClickHouse MCP server,
         for follow-up questions the fixed tools do not answer. Every number in its write-up came
         from a tool call; it is instructed never to estimate one and never to invent a timecode.
@@ -344,7 +344,7 @@
       <p>
         Because a full run costs real quota, finished investigations are stored and replayed on
         the next visit, timestamped, with the button offering a fresh run. If a run is cut short,
-        it is kept too — but flagged, and the page says it was cut short. A truncated report
+        it is kept too, but flagged, and the page says it was cut short. A truncated report
         passed off as a finished one would be worse than an empty panel.
       </p>
     </section>
@@ -369,14 +369,14 @@
           <tr><td class="mono">03:40–04:10</td><td>Story / pacing</td><td>Everyone, playback clean</td></tr>
           <tr><td class="mono">09:20–10:00</td><td>Technical</td><td>Android players on build 4.2.1, buffering</td></tr>
           <tr><td class="mono">02:10–02:40</td><td>Localization</td><td>Non-English locales with no subtitle track</td></tr>
-          <tr><td class="mono">10:20–10:40</td><td><i>Decoy</i></td><td>Mild, universal, below the significance floor — must never be reported</td></tr>
+          <tr><td class="mono">10:20–10:40</td><td><i>Decoy</i></td><td>Mild, universal, below the significance floor, must never be reported</td></tr>
         </tbody>
       </table>
 
       <p>
         The timecodes are not arbitrary. Each was chosen by asking Gemini to survey the real
         footage first, so the telemetry and the film agree. The pacing cliff sits on the
-        genuinely slowest passage — Sintel going to bed, static shots, no score. The
+        genuinely slowest passage: Sintel going to bed, static shots, no score. The
         localization cliff sits on the shaman scene, where the plot goal is established
         entirely through spoken English. An earlier draft planted the story cliff over the
         dragon chase, which would have produced a demo where the numbers claim a scene drags
@@ -394,7 +394,7 @@
       <h2>What it is built on</h2>
       <table class="rules-table">
         <tbody>
-          <tr><td>Agent</td><td>Google Agent Development Kit — <code>LlmAgent</code> with an <code>MCPToolset</code></td></tr>
+          <tr><td>Agent</td><td>Google Agent Development Kit, <code>LlmAgent</code> with an <code>MCPToolset</code></td></tr>
           <tr><td>Reasoning</td><td>Gemini 3.5 Flash</td></tr>
           <tr><td>Video</td><td>Gemini 3.6 Flash, agentic video understanding</td></tr>
           <tr><td>Warehouse</td><td>ClickHouse Cloud, read through the official <code>mcp-clickhouse</code> server</td></tr>
@@ -403,9 +403,9 @@
         </tbody>
       </table>
       <p>
-        Reasoning and video run on separate models on purpose. They want different things — one
-        is a fast reasoner making a dozen short calls, the other reads video once and carefully —
-        and request quota is counted per model, so separating them also stops a long
+        Reasoning and video run on separate models on purpose. They want different things: one
+        is a fast reasoner making a dozen short calls, the other reads video once and carefully.
+        Request quota is counted per model, so separating them also stops a long
         investigation from starving its own video reads.
       </p>
       <p>
@@ -445,7 +445,7 @@
           </tr>
           <tr>
             <td class="mono">GET /api/investigate/{title_id}</td>
-            <td>The telemetry evidence for every cliff at once — cohort breakdowns, buffering
+            <td>The telemetry evidence for every cliff at once: cohort breakdowns, buffering
                 comparison, and the cause the numbers alone support. No model call, so this is
                 fast and free.</td>
           </tr>
@@ -511,7 +511,7 @@ make eval           # grade the diagnosis against the planted ground truth</code
         <li>
           <b>The demo data is simulated.</b> Real telemetry is nobody's to publish. The
           simulation models hazard rates, buffering, device mix and locale mix, and the cliffs
-          are planted deliberately — which makes the diagnosis gradeable, but does not prove
+          are planted deliberately, which makes the diagnosis gradeable but does not prove
           the thresholds are right for your catalogue.
         </li>
         <li>
@@ -548,7 +548,7 @@ make eval           # grade the diagnosis against the planted ground truth</code
         <p>
           Partly. YouTube Studio gives creators a retention curve for videos they own, so the
           cliffs and the footage reading would work. But YouTube only exposes an aggregate
-          curve — no device, app build, country or subtitle data — so the story-versus-delivery
+          curve (no device, app build, country or subtitle data), so the story-versus-delivery
           split, which is the whole point, would not.
         </p>
       </div>
@@ -559,7 +559,7 @@ make eval           # grade the diagnosis against the planted ground truth</code
           Because it would be guessing at what <i>seems</i> boring rather than measuring what
           actually lost people, and it would be wrong in exactly the expensive direction: a
           buffering failure looks perfectly fine on screen. Walkout's technical cliff is a
-          dragon fight — frantic, well-cut, no visible artefact at all. A model watching that
+          dragon fight: frantic, well-cut, no visible artefact at all. A model watching that
           window alone would report a great scene. The audience left because the stream broke.
         </p>
       </div>
@@ -576,8 +576,8 @@ make eval           # grade the diagnosis against the planted ground truth</code
       <div class="qa">
         <h4>How is "watch hours recoverable" calculated?</h4>
         <p>
-          The excess viewers who left at that cliff — the ones above what the title normally
-          loses over the same span — multiplied by the runtime still ahead of them, adjusted for
+          The excess viewers who left at that cliff (the ones above what the title normally
+          loses over the same span), multiplied by the runtime still ahead of them, adjusted for
           how many would have finished anyway. It is an upper bound on what fixing that one
           moment could win back, and it is what the findings are ranked by.
         </p>

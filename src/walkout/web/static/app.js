@@ -1,5 +1,5 @@
 /* ---------------------------------------------------------------------------
-   Walkout — client
+   Walkout: client
 
    No framework and no build step. The page has one job: show a survival curve,
    let you open a cliff to see who left, and stream the agent's reasoning while
@@ -24,7 +24,7 @@ function applyTheme(theme) {
 
 function initTheme() {
   // ?theme=light|dark pins the theme, which is what a screenshot or a recorded
-  // demo needs -- neither can click the toggle.
+  // demo needs, neither can click the toggle.
   const asked = new URLSearchParams(location.search).get("theme");
   let stored = null;
   try { stored = localStorage.getItem(THEME_KEY); } catch { /* private window */ }
@@ -694,7 +694,7 @@ async function watchWindow() {
    Reading video takes ten to twenty seconds. A sentence saying "please wait"
    leaves the panel looking broken for all of it; a skeleton of the real layout
    reads as the answer arriving, and nothing jumps when it does. The elapsed
-   counter is the honest part -- it says the wait is real and how long it has
+   counter is the honest part; it says the wait is real and how long it has
    been so far, which is less unnerving than a spinner that could mean anything. */
 function showWatching() {
   const started = Date.now();
@@ -826,7 +826,7 @@ function renderPreview(results) {
 
 
 /* A localization finding must never be labelled with an app build, and a
-   delivery finding must never be labelled with a locale -- naming the wrong
+   delivery finding must never be labelled with a locale, naming the wrong
    cohort sends the fix to the wrong team, which is the exact failure this
    product exists to prevent. */
 function deliveryCohort(investigation) {

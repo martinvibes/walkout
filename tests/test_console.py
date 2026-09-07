@@ -1,7 +1,7 @@
 """The console's JavaScript and its HTML have to agree about what exists.
 
-There is no build step here -- deliberately, so the image stays Python-only and
-nothing can break at 2am before a deadline -- which means nothing checks that
+There is no build step here, deliberately, so the image stays Python-only and
+nothing can break at 2am before a deadline, which means nothing checks that
 `$("#reading")` matches an element until a browser runs it. A missing id is a
 silent failure: the page renders, the console logs, and the visitor sees a
 section that never fills in.
@@ -31,7 +31,7 @@ DOCS_JS = (STATIC / "docs.js").read_text()
 PAGES = [("console", HTML, JS), ("docs", DOCS_HTML, DOCS_JS)]
 PAGE_IDS = [page[0] for page in PAGES]
 
-# `$("#thing")` and `$$("#thing .child")` -- take the id, drop any descendant.
+# `$("#thing")` and `$$("#thing .child")`, take the id, drop any descendant.
 SELECTOR = re.compile(r'\$\$?\("#([A-Za-z0-9_-]+)')
 MARKUP_ID = re.compile(r'id="([A-Za-z0-9_-]+)"')
 # Elements the script builds itself: `banner.id = "clientError"`, and ids
@@ -44,7 +44,7 @@ SCRIPTED_ID = re.compile(r'\.id\s*=\s*"([A-Za-z0-9_-]+)"')
 BARE_CALL = re.compile(r"(?<![.\w$])([a-z][A-Za-z0-9_]*)\s*\(")
 
 KEYWORDS = {"if", "for", "while", "switch", "catch", "return", "typeof", "function", "var"}
-# Bare `window` methods -- the page calls them unqualified, as everyone does.
+# Bare `window` methods, the page calls them unqualified, as everyone does.
 BROWSER_GLOBALS = {"fetch", "setTimeout", "setInterval", "clearTimeout",
                    "clearInterval", "requestAnimationFrame", "addEventListener",
                    "removeEventListener", "matchMedia", "resolve", "reject",
@@ -81,7 +81,7 @@ def test_every_internal_anchor_has_a_target(name, markup, script) -> None:
 def test_the_film_is_actually_on_the_page() -> None:
     """The product claims a model watches the film; the film should be visible.
 
-    It was not, for the whole first version of this console -- every number was
+    It was not, for the whole first version of this console, every number was
     there and the thing the numbers were about was nowhere.
     """
     assert 'id="player"' in HTML
@@ -89,7 +89,7 @@ def test_the_film_is_actually_on_the_page() -> None:
 
 
 def test_the_console_reads_as_numbered_steps() -> None:
-    """Where, then what was on screen, then why -- in that order."""
+    """Where, then what was on screen, then why, in that order."""
     stages = re.findall(r'<span class="stage-n">(\d)</span>', HTML)
     assert stages == ["1", "2", "3"], stages
 

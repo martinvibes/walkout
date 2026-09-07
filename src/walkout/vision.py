@@ -91,12 +91,12 @@ PROMPT = """You are watching one window of a film for a retention analyst.
 Window: {start} to {end}.
 
 Describe only what is in this window. Do not guess at audience numbers, and do
-not assume anything went wrong -- many windows are simply good scenes. Judge
+not assume anything went wrong; many windows are simply good scenes. Judge
 pacing and dialogue against the film's own rhythm, not against a target.
 
 Two things matter especially:
 - If the scene carries meaning that a viewer would miss without dialogue they
-  can understand -- a language they may not speak, a sign, a whispered line --
+  can understand (a language they may not speak, a sign, a whispered line),
   say so in attention_risks.
 - If the picture itself looks degraded, say so in visual_artifacts. A dark or
   grainy shot that is clearly an artistic choice is not a delivery problem."""
@@ -172,7 +172,7 @@ def watch_window(
     start = max(0, start_sec - pad_sec)
 
     # The same window read twice is the same answer, and video reads are the
-    # expensive call in the system -- in tokens, in seconds, and against a
+    # expensive call in the system, in tokens, in seconds, and against a
     # daily quota. Rehearsing a demo should not spend the budget for it.
     cached = _cache_path(video_uri, start, end_sec, model)
     if _cache_enabled() and cached.exists():

@@ -3,7 +3,7 @@
 Each one does a job the model should not be doing by hand. Cliff detection is a
 survival-analysis query with a significance test; cohort ranking is arithmetic;
 neither is improved by a language model improvising SQL. What the model is good
-at -- weighing two independent kinds of evidence and writing the answer -- is
+at, weighing two independent kinds of evidence and writing the answer, is
 what the instruction leaves to it.
 
 Detected cliffs are kept in session state and addressed by id, so the model
@@ -60,8 +60,8 @@ def _recall(context: ToolContext, cliff_id: str) -> Cliff:
 def find_walkouts(title_id: str, tool_context: ToolContext) -> dict[str, Any]:
     """Find the windows where an audience abandons a title, worst first.
 
-    Compares each ten-second bucket's hazard rate -- the share of viewers still
-    watching who leave in that bucket -- against the title's own post-warmup
+    Compares each ten-second bucket's hazard rate, the share of viewers still
+    watching who leave in that bucket, against the title's own post-warmup
     baseline, keeps only windows that clear a significance test, and merges
     consecutive ones into a single cliff. Viewers who reach the end credits are
     finishing, not abandoning, and are excluded.

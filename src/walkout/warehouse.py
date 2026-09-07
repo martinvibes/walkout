@@ -4,7 +4,7 @@ There are two implementations. `DirectWarehouse` speaks to ClickHouse over the
 native HTTP driver and is what the loader and the batch evaluator use, because
 loading data is not agent work. `McpWarehouse` speaks to the same cluster
 through the official ClickHouse MCP server, and is what the agent uses at
-runtime -- so every number the agent reports has come back through MCP.
+runtime, so every number the agent reports has come back through MCP.
 
 Both accept the same named queries with the same parameters, which is the point:
 the evaluation harness grades the same SQL the agent runs.
@@ -38,8 +38,8 @@ def quote(value: Any, sql_type: str) -> str:
 
     The MCP server takes a query string and nothing else, so parameters that
     the driver would normally bind have to be written into the SQL. Numbers go
-    through int()/float() -- a value that is not a number raises rather than
-    reaching the cluster -- and strings are escaped. Only these two shapes are
+    through int()/float(), a value that is not a number raises rather than
+    reaching the cluster, and strings are escaped. Only these two shapes are
     accepted; a new type has to be added here deliberately.
     """
     if sql_type.startswith(("UInt", "Int")):

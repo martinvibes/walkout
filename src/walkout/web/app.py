@@ -2,7 +2,7 @@
 
 Two layers, deliberately separated.
 
-The deterministic layer -- retention curve, cliffs, cohort breakdown -- is pure
+The deterministic layer (retention curve, cliffs, cohort breakdown) is pure
 ClickHouse and answers in a couple of seconds. The page is alive before the
 agent has said a word.
 
@@ -22,7 +22,9 @@ from pathlib import Path
 from typing import Any, AsyncIterator
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import FileResponse, StreamingResponse
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.responses import FileResponse, HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
 from .. import analysis, reports
@@ -46,8 +48,38 @@ async def lifespan(_app: FastAPI) -> AsyncIterator[None]:
 
 
 app = FastAPI(
-    title="Walkout", docs_url="/api/docs", redoc_url=None, lifespan=lifespan
+    title="Walkout",
+    description=(
+        "Finds where an audience stops watching a title, and works out why: "
+        "the cut, the subtitles, or the CDN. Every endpoint is read-only and "
+        "needs no key."
+    ),
+    version="1.0.0",
+    docs_url=None,          # replaced below, to serve it under our own branding
+    redoc_url=None,
+    lifespan=lifespan,
 )
+
+# The API is meant to be tried, including from someone else's page. Everything
+# here is read-only public data with no key and no session, so there is nothing
+# a browser origin could be trusted with that it should not be.
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=False,
+    allow_methods=["GET"],
+    allow_headers=["*"],
+)
+
+
+@app.get("/api/docs", include_in_schema=False)
+def api_docs() -> HTMLResponse:
+    """Swagger UI, wearing our own icon rather than the framework's."""
+    return get_swagger_ui_html(
+        openapi_url="/openapi.json",
+        title="Walkout API",
+        swagger_favicon_url="/static/favicon.svg",
+    )
 
 
 def warehouse() -> McpWarehouse:
@@ -136,7 +168,7 @@ def investigate_all(title_id: str) -> list[dict[str, Any]]:
 
     Deliberately one call rather than one per cliff. Each investigation is a
     dozen queries, and firing them concurrently down a single MCP pipe just
-    queues them behind each other until the server's query timeout fires --
+    queues them behind each other until the server's query timeout fires,
     which is exactly how this endpoint was first written, and exactly what the
     browser then reported as a 500.
     """
@@ -216,7 +248,7 @@ async def _agent_events(title_id: str, question: str | None) -> AsyncIterator[st
             await asyncio.sleep(0)
         complete = True
         yield event("done")
-    except Exception as exc:  # noqa: BLE001 -- the browser deserves the reason
+    except Exception as exc:  # noqa: BLE001 (the browser deserves the reason)
         yield event("error", message=f"{type(exc).__name__}: {exc}")
     finally:
         # Also on the failure path, and also when the browser goes away. A run
@@ -259,8 +291,8 @@ def watch(title_id: str, start: int, end: int) -> dict[str, Any]:
     This is the half of the product that telemetry cannot do, and until now it
     was only reachable through the agent. On its own it is worth showing: give
     it any thirty seconds and it comes back with what is on screen, how the
-    scene is paced, and whether anything is visibly broken -- without ever being
-    told that viewers left there.
+    scene is paced, and whether anything is visibly broken, all without ever
+    being told that viewers left there.
     """
     from ..vision import watch_window
 
@@ -276,7 +308,7 @@ def watch(title_id: str, start: int, end: int) -> dict[str, Any]:
 
     try:
         reading = watch_window(str(title["video_uri"]), start, end)
-    except Exception as exc:  # noqa: BLE001 -- quota and safety blocks both land here
+    except Exception as exc:  # noqa: BLE001 (quota and safety blocks both land here)
         raise HTTPException(502, f"{type(exc).__name__}: {exc}") from exc
     return reading.to_dict()
 
@@ -317,7 +349,7 @@ def docs() -> FileResponse:
 
 
 def serve() -> int:
-    """`walkout-serve` -- run the app.
+    """`walkout-serve`: run the app.
 
     Host and port come from the environment so the same command works locally
     and on a platform that hands you a $PORT and expects you to listen on it.

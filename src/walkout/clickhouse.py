@@ -2,7 +2,7 @@
 
 Two paths reach the same cluster, deliberately:
 
-* this module, for deterministic work the agent should not be improvising --
+* this module, for deterministic work the agent should not be improvising:
   loading data, applying the schema, running the named analytical queries;
 * the official `mcp-clickhouse` MCP server, wired into the agent as an ADK
   toolset, for the open-ended follow-up questions a diagnosis actually needs
@@ -31,7 +31,7 @@ from .config import SQL_DIR, ClickHouseConfig, clickhouse as clickhouse_config
 # viewer watching English audio (who needs nothing) and a Hindi viewer who was
 # never offered a subtitle track (who is about to leave). Around 70% of the
 # audience lands in one bucket and the signal disappears. What matters is the
-# *gap* -- a viewer whose locale does not match the audio and who has no
+# *gap*, a viewer whose locale does not match the audio and who has no
 # subtitles running.
 #
 # Values here are ours, never the model's: the agent picks a key from this
@@ -108,7 +108,7 @@ class DirectWarehouse:
     """A Warehouse backed by the ClickHouse HTTP driver.
 
     Used by the loader and by the evaluation harness. The agent uses
-    McpWarehouse instead -- same queries, same parameters, routed through the
+    McpWarehouse instead, same queries, same parameters, routed through the
     official ClickHouse MCP server.
     """
 
@@ -124,7 +124,7 @@ def split_statements(sql: str) -> list[str]:
 
     Comments are stripped *before* splitting on semicolons, not after. A prose
     comment containing a semicolon would otherwise be cut in half and its tail
-    parsed as SQL -- which is exactly what happened once, with the error
+    parsed as SQL, which is exactly what happened once, with the error
     pointing at a sentence fragment rather than at the comment it came from.
 
     Both comment positions count. Stripping only whole-line comments left the
@@ -176,7 +176,7 @@ def expand_events(client: Client, title_id: str, bucket_sec: int,
     """Turn uploaded session descriptors into playback heartbeats, server-side.
 
     One statement, so the events table is either fully populated for this title
-    or not at all -- there is no partial state for a query to quietly succeed
+    or not at all; there is no partial state for a query to quietly succeed
     against.
     """
     sql = (SQL_DIR / "expand_events.sql").read_text()
@@ -209,7 +209,7 @@ def insert_columns(client: Client, table: str, cols: dict[str, Any], names: Sequ
     """Insert one chunk, retrying transient network failures.
 
     Without this a single dropped connection aborts a ten-minute load and
-    leaves a partially populated table -- which is far more dangerous than an
+    leaves a partially populated table, which is far more dangerous than an
     empty one, because every query still returns plausible-looking numbers.
     """
     rows = list(zip(*[_tolist(cols[n]) for n in names]))
