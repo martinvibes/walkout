@@ -64,15 +64,45 @@ because it sits below the significance floor. Mention it if you have room.
 
 ## The script
 
+Target **2:00**, which is still a full minute under the cap. The extra fifteen
+seconds over a rushed 1:45 buys the two beats that make it land: holding on
+each verdict long enough to read it, and proving the API is real.
+
 | Time | On screen | Say |
 |---|---|---|
-| **0:00-0:12** | The retention curve, already drawn. Cursor on the 03:40 band. | "This is a retention curve. At three minutes forty, three times more people walk out than this film normally loses. Every platform can show you that. None can tell you why." |
-| **0:12-0:22** | Slow pan across the three shaded cliff bands. | "It matters, because two different problems make the same cliff. A scene that drags needs a recut. A stream that stutters needs an engineer. Opposite fixes." |
-| **0:22-0:36** | Stage 1. Stat row and cliff cards legible. Open one card to show the cohort evidence. | "Walkout tells them apart. First, survival analysis over thirteen million playback events in ClickHouse, live, through the official ClickHouse MCP server. It finds three moments where far more people left than usual." |
-| **0:36-0:56** | Stage 2. Click **Custom**, press **Use playhead**, then **Watch this moment**. Hold on the loader a beat, cut to the reading. | "Then the part telemetry cannot do. Gemini watches those exact seconds of the real film. And to show these aren't three prepared clips, I'll pick a window myself. It reports what's on screen and how it's paced. It is never told that anyone walked out there." |
-| **0:56-1:12** | Press **Investigate**. Tool calls stream into the trace. **Speed this segment to 4x.** | "Now the agent runs the whole investigation. This is the Agent Development Kit making real tool calls, sped up here. It pulls the cohorts, watches each cliff, and checks the numbers against the footage." |
-| **1:12-1:36** | Scroll the finished verdict slowly. Hold about three seconds on each of the three. | "Three cliffs, three different answers. At three-forty: pacing. Everyone left at the same rate and playback was perfect, so that one is the editor's. At two-ten: localization. Viewers with no subtitle track, two point one times more likely to quit. At nine-twenty: technical. Android 4.2.1, rebuffering at thirteen percent against a baseline of one and a half. And in bold: do not recommend an edit." |
-| **1:36-1:45** | Hold on the verdict, then the live URL. | "Same shape on the chart. Three different people to fix it. It's live at this link, the code is open, and every number you just saw came out of ClickHouse." |
+| **0:00-0:11** | Cold open on the retention curve, already drawn. No logo, no title card. Cursor lands on the 03:40 cliff. | "Six thousand six hundred people quit this film at the exact same moment. Every analytics platform can show you that drop. None of them can tell you what caused it." |
+| **0:11-0:25** | Slow pan across the three shaded bands. | "And that's the problem, because a scene that drags and a stream that stutters make an identical cliff. One needs a recut. The other needs an engineer. Get it backwards and you damage a film that was fine." |
+| **0:25-0:38** | Stage 1. Open a cliff card so the cohort evidence is visible. | "Walkout tells them apart. It runs survival analysis over thirteen million playback events in ClickHouse, live, through the official ClickHouse MCP server, and finds the moments a film loses a room." |
+| **0:38-0:56** | Stage 2. Click **Custom**, press **Use playhead**, then **Watch this moment**. Hold on the loader a beat, cut to the reading. | "Then it does what telemetry can't. Gemini watches those exact seconds of the real film. And to prove these aren't three prepared clips, I'll pick a window myself, right now. It is never told that anyone walked out there." |
+| **0:56-1:10** | Press **Investigate**. Tool calls stream in. **Speed this segment to 4x.** | "Now the full agent. This is the Agent Development Kit making real tool calls, sped up. It pulls the cohorts, watches each cliff, and checks the numbers against what's on screen." |
+| **1:10-1:34** | Scroll the verdict slowly. Hold ~3 seconds on each of the three. This is the punchline; do not rush it. | "Three cliffs. Three different answers. At three-forty: pacing. Everyone left at the same rate and playback was flawless, so that one is the editor's. At two-ten: localization. Viewers with no subtitle track, more than twice as likely to quit. At nine-twenty: technical. Android 4.2.1, rebuffering at thirteen percent. And in bold: do not recommend an edit to the film." |
+| **1:34-1:50** | Cut to `/api/docs`. Expand `GET /api/retention/{title_id}`, hit **Try it out**, then **Execute**. Let the real JSON land. Then one quick scroll of `/docs`. | "And none of it is trapped in this page. Everything the console does is a public, read-only API you can call right now, with documentation for how every verdict is decided and what it refuses to guess at." |
+| **1:50-2:00** | Back to the verdict, then hold on the live URL. | "Same shape on the chart. Three different people to fix it. That's the difference between knowing *when* your audience left, and knowing *why*." |
+
+### The hook, if you want a different one
+
+The opening line is doing the most work in the whole video, so pick the one you
+can say most naturally. All three are true of what is on screen.
+
+1. **"Six thousand six hundred people quit this film at the exact same moment."**
+   Concrete and human. A number of people beats a multiple of a baseline, which
+   is why this is the default.
+2. **"At three minutes forty, this film loses a room."** Shortest and most
+   cinematic. Good if you want to be on the product two seconds sooner.
+3. **"Something happens at three minutes forty. Nobody can tell you what."**
+   Most direct statement of the gap. Follow it immediately with the curve.
+
+Whichever you pick, the second sentence stays: every platform shows the drop,
+none of them says why. That contrast is the entire pitch.
+
+### The API beat is worth the fifteen seconds
+
+Most hackathon demos are a page with a model behind it. Executing a real request
+against the deployed instance, on camera, and watching JSON come back proves in
+one shot that this is a service rather than a screen recording. It is also the
+cheapest credibility in the video: no quota, no waiting, and it cannot fail.
+
+Have `/api/docs` open in a second tab before you record so the cut is instant.
 
 ## What to actually explain, and what to leave out
 
