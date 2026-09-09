@@ -804,36 +804,21 @@ a { color: inherit; }
 
 /* --- how it works ------------------------------------------------------- */
 
-.how { padding: 92px 0; border-top: 1px solid var(--line); background: var(--surface-sunk); }
-
+/* Layout only. Everything about how this section looks is at the bottom of
+   the file, under "Method: the panel that turns over". */
 .how-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 12px;
-  margin-top: 34px;
 }
 
 .how-card {
-  padding: 26px;
   border-radius: var(--radius-lg);
-  background: var(--surface);
-  border: 1px solid var(--line);
   position: relative;
   overflow: hidden;
-  transition: transform .5s var(--ease), box-shadow .5s var(--ease);
 }
 
-.how-card:hover { transform: translateY(-4px); box-shadow: var(--shadow); }
-
-.how-card .n {
-  font-family: var(--mono);
-  font-size: 12.5px;
-  color: var(--ink-faint);
-  letter-spacing: .16em;
-}
-
-.how-card h4 { font-size: 18px; margin: 12px 0 9px; letter-spacing: -.025em; }
-.how-card p { font-size: 14px; color: var(--ink-soft); line-height: 1.6; }
+.how-card h4 { letter-spacing: -.025em; }
+.how-card p { color: var(--ink-soft); line-height: 1.6; }
 
 .stack {
   margin-top: 26px;
@@ -1303,6 +1288,11 @@ h1, h2, h3, h4, h5,
    It inverts in both directions. A light page gets a dark panel, a dark page
    gets a light one, so the section is deliberately the odd one out either way
    rather than only looking considered in the theme it was designed in.
+
+   Deliberately monochrome. Colour on this site means something specific: blue
+   is a delivery fault, amber is localization, pink is the edit. Spending one
+   of those on decoration here would teach the reader the wrong thing on the
+   way to the console, where the same colours carry a verdict.
    =========================================================================== */
 
 .how {
@@ -1315,13 +1305,12 @@ h1, h2, h3, h4, h5,
   --surface:      #141418;
   --surface-sunk: #0F0F13;
   --line:         #24242C;
-  --line-strong:  #383842;
+  --line-strong:  #3A3A45;
   --ink:          #FBFBFA;
   --ink-soft:     #B7B7C2;
   --ink-faint:    #8C8C99;
   --brand:        #FBFBFA;
   --on-brand:     #0B0B0D;
-  --accent:       #8AA6FF;
   --shadow:    0 4px 30px -10px rgba(0, 0, 0, .8);
   --shadow-lg: 0 30px 80px -30px rgba(0, 0, 0, .95);
 
@@ -1340,20 +1329,19 @@ h1, h2, h3, h4, h5,
   --ink-faint:    #6D6D76;
   --brand:        #101013;
   --on-brand:     #FAFAF8;
-  --accent:       #2B55F5;
   --shadow:    0 4px 24px -8px rgba(18, 18, 15, .14);
   --shadow-lg: 0 24px 70px -24px rgba(18, 18, 15, .2);
 }
 
-/* A light thrown from above the fold of the section, and a faint rule grid
-   under it. Both are pure CSS and cost nothing to paint. */
+/* A wash thrown from above the section, and a faint rule grid beneath it, both
+   drawn in the section's own ink so nothing new enters the palette. */
 .how::before {
   content: "";
   position: absolute;
   inset: -30% -20% auto -20%;
   height: 80%;
   background: radial-gradient(52% 62% at 50% 0%,
-              color-mix(in srgb, var(--accent) 20%, transparent), transparent 72%);
+              color-mix(in srgb, var(--ink) 7%, transparent), transparent 72%);
   pointer-events: none;
 }
 
@@ -1373,14 +1361,19 @@ h1, h2, h3, h4, h5,
 
 .how > .shell { position: relative; z-index: 1; }
 
-.how .how-lede { font-size: 17px; }
+.how .how-lede { font-size: 17px; max-width: 54ch; }
 
-/* --- the four steps ------------------------------------------------------ */
+/* --- the four steps ------------------------------------------------------
+   Read as a pipeline, not as four essays. Each card is one sentence about
+   what happens and one line naming what comes out of it, so the four outputs
+   chain into the answer without the reader having to assemble them. */
 
 .how-grid { gap: 14px; margin-top: 40px; }
 
 .how-card {
-  padding: 28px 26px 30px;
+  display: flex;
+  flex-direction: column;
+  padding: 26px 24px 22px;
   background: color-mix(in srgb, var(--surface) 82%, transparent);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
@@ -1389,26 +1382,11 @@ h1, h2, h3, h4, h5,
               border-color .3s var(--ease-soft);
 }
 
-/* An accent rule that draws itself across the top of the card you are on. */
-.how-card::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  top: 0;
-  height: 2px;
-  background: linear-gradient(90deg, var(--accent), transparent);
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform .5s var(--ease);
-}
-
 .how-card:hover {
   transform: translateY(-6px);
-  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-color: var(--line-strong);
   box-shadow: var(--shadow-lg);
 }
-.how-card:hover::before { transform: scaleX(1); }
 
 .how-card .n {
   display: block;
@@ -1417,17 +1395,33 @@ h1, h2, h3, h4, h5,
   font-weight: 600;
   letter-spacing: -.03em;
   line-height: 1;
-  color: var(--accent);
+  color: var(--ink);
 }
+
+/* A rule that runs out from under the numeral and completes on hover, which
+   is the only motion in the section and costs one pseudo-element. */
+.how-card .n::before {
+  content: "";
+  position: absolute;
+  left: 24px;
+  right: 24px;
+  top: 68px;
+  height: 1px;
+  background: var(--line-strong);
+  transform: scaleX(.16);
+  transform-origin: left;
+  transition: transform .55s var(--ease), background-color .3s var(--ease-soft);
+}
+.how-card:hover .n::before { transform: scaleX(1); background: var(--ink); }
 
 /* The same numeral again, oversized and nearly invisible, so the card has
    depth without another element in the markup. */
 .how-card .n::after {
   content: attr(data-ghost);
   position: absolute;
-  right: 14px;
-  bottom: -22px;
-  font-size: 128px;
+  right: 10px;
+  bottom: -26px;
+  font-size: 120px;
   font-weight: 700;
   line-height: 1;
   letter-spacing: -.06em;
@@ -1435,11 +1429,22 @@ h1, h2, h3, h4, h5,
   pointer-events: none;
 }
 
-.how-card h4 { font-size: 18.5px; margin: 14px 0 10px; }
-.how-card p { font-size: 14.5px; }
+.how-card h4 { font-size: 18px; margin: 28px 0 9px; }
+.how-card p { font-size: 14.5px; margin: 0 0 20px; }
+
+/* What this step hands to the next one. */
+.how-out {
+  display: block;
+  margin-top: auto;
+  padding-top: 14px;
+  border-top: 1px solid var(--line);
+  font: 500 12px/1.45 var(--mono);
+  color: var(--ink-faint);
+}
+.how-out::before { content: "\2192  "; }
 
 @media (prefers-reduced-motion: reduce) {
-  .how-card, .how-card::before { transition: none; }
+  .how-card, .how-card .n::before { transition: none; }
   .how-card:hover { transform: none; }
 }
 

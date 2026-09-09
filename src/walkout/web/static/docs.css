@@ -395,13 +395,18 @@ ul.plain li::before {
   box-shadow: var(--shadow);
 }
 
-/* The primary one is the API, and it says so before you read a word of it. */
+/* The primary one is the API, and it says so before you read a word of it.
+   Inked rather than coloured: on this site a colour is a verdict, and none of
+   them mean "look here first". */
 .quick-card.primary {
-  border-color: color-mix(in srgb, var(--cause-technical) 45%, var(--line));
-  background: color-mix(in srgb, var(--cause-technical) 6%, var(--surface));
+  border-color: var(--ink);
+  background: var(--ink);
 }
-.quick-card.primary:hover { border-color: var(--cause-technical); }
-.quick-card.primary .quick-tag { color: var(--cause-technical); }
+.quick-card.primary:hover { box-shadow: var(--shadow-lg); }
+.quick-card.primary b,
+.quick-card.primary .quick-go { color: var(--on-brand); }
+.quick-card.primary .quick-tag,
+.quick-card.primary .quick-sub { color: color-mix(in srgb, var(--on-brand) 72%, transparent); }
 
 .quick-tag {
   font: 600 11px/1 var(--sans);

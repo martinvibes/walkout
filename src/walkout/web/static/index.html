@@ -218,58 +218,50 @@
   <div class="shell">
     <span class="eyebrow static">Method</span>
     <h2 style="font-size:clamp(28px,3.4vw,44px);margin-top:12px;max-width:20ch">Two witnesses that never spoke to each other.</h2>
-    <p class="how-lede">Your numbers know exactly when people left but have never seen the film.
-       A model that watches the film has no idea which thirty seconds out of ninety minutes
-       matter. Walkout is the conversation between them.</p>
+    <p class="how-lede">Your telemetry saw the audience but never the film. A model can watch
+       the film but has no idea which thirty seconds matter. Walkout is the conversation
+       between them.</p>
 
     <div class="how-grid">
       <article class="how-card fade-up">
         <span class="n" data-ghost="1">01</span>
-        <h4>Find where they left</h4>
-        <p>We read every play, pause and quit from every viewer and look for the moments
-           where far more people stopped than this title normally loses. Every film has a
-           slow leak; we are only interested in the cliffs. Someone who watched to the end
-           is not counted as having left.</p>
+        <h4>Where they left</h4>
+        <p>Thirteen million play, pause and quit events. We keep only the moments where far
+           more people left than this film normally loses.</p>
+        <span class="how-out">Three cliffs, to the second</span>
       </article>
       <article class="how-card fade-up">
         <span class="n" data-ghost="2">02</span>
-        <h4>Work out who left</h4>
-        <p>The same moment gets cut by phone, TV, app version, country, language and
-           delivery network. If everyone quit at the same rate, the problem is on screen.
-           If it is mostly one group, the problem is whatever that group had in common.</p>
+        <h4>Who left</h4>
+        <p>The same moment, cut by phone, TV, app build, country and language. Everyone at
+           once points at the screen. One group points at whatever they had in common.</p>
+        <span class="how-out">A cohort, or nobody</span>
       </article>
       <article class="how-card fade-up">
         <span class="n" data-ghost="3">03</span>
-        <h4>Watch the moment</h4>
-        <p>Gemini watches those exact seconds of the real film and describes what is
-           happening: how it is paced, whether anyone is speaking, whether the picture
-           itself looks broken. It is never told that anyone walked out there, so when it
-           independently flags the same moment, that is real corroboration.</p>
+        <h4>What was on screen</h4>
+        <p>Gemini watches those exact seconds. It is never told that anyone left there, so
+           when it flags the same moment anyway, that is a second witness.</p>
+        <span class="how-out">A reading of the footage</span>
       </article>
       <article class="how-card fade-up">
         <span class="n" data-ghost="4">04</span>
-        <h4>Say what to fix, and to whom</h4>
-        <p>Buffering on one app build is an engineering ticket, and Walkout will tell you
-           in as many words not to touch the edit. Viewers in one language with no subtitle
-           track is a job for your localization team. A quiet scene everyone walked out of
-           is a note for the editor. When it genuinely cannot tell, it says so instead of
-           guessing.</p>
+        <h4>What to fix</h4>
+        <p>The numbers and the footage either agree or they do not. Either way you get one
+           verdict, and the name of whoever should act on it.</p>
+        <span class="how-out">A verdict, and its owner</span>
       </article>
     </div>
 
     <p class="how-foot fade-up">
-      Walkout runs on the playback telemetry a streaming service already collects, the
-      same events behind any retention chart. This demo runs on <b>Sintel</b> (Blender
-      Foundation, CC-BY) with 13 million simulated viewing events, and cliffs planted at
-      known timecodes for known reasons so the diagnosis can be graded rather than merely
-      admired. The film itself is watched straight from YouTube; it is never copied or
-      hosted here.
+      This demo runs on <b>Sintel</b> (Blender Foundation, CC-BY) with 13 million simulated
+      viewing events and cliffs planted at known timecodes, so the diagnosis can be graded
+      rather than admired. The film is streamed straight from YouTube, never copied here.
     </p>
 
     <p class="how-more fade-up">
       <a href="/docs">Full documentation<span class="arrow">→</span></a>
-      <span>What it needs to run, how each verdict is decided, what it deliberately refuses
-            to guess at, and how to run the whole thing yourself.</span>
+      <span>How each verdict is decided, and what it refuses to guess at.</span>
     </p>
 
     <div class="stack fade-up">
