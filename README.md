@@ -2,7 +2,20 @@
 
 **Every platform knows *when* viewers stop watching. None of them know *why*.**
 
-**Live: https://walkout-production-f914.up.railway.app**
+**Live demo: https://walkout-production-f914.up.railway.app**
+
+| | |
+|---|---|
+| **Hackathon** | [Agentic Cinema: The Blockbuster Hackathon](https://agentic-cinema.devpost.com/) |
+| **Partner track** | ClickHouse |
+| **Hosted project** | https://walkout-production-f914.up.railway.app |
+| **Source** | https://github.com/martinvibes/walkout (public, Apache-2.0) |
+| **Google Cloud at runtime** | Gemini 3.5 Flash + Gemini 3.6 Flash, orchestrated by the Agent Development Kit |
+| **Partner service at runtime** | ClickHouse Cloud, reached through the official `mcp-clickhouse` MCP server |
+
+Nothing here is a mock. Opening the demo runs live ClickHouse queries against
+13,065,665 rows; pressing **Investigate** runs a real agent that makes real tool
+calls and really reads the film.
 
 Retention curves are everywhere: YouTube Studio, Mux, Conviva, every OTT
 analytics stack. They all tell you the same thing: 18% of your audience left at
@@ -35,6 +48,27 @@ stream to everyone. Walkout is an agent that tells them apart.
    cliff: **story · pacing · technical · localization · ad-break**.
 5. **Act.** Emits a ranked cut list: timecode, cause, evidence, recommended
    action, and recoverable watch-hours. Re-run after a change to see it move.
+
+## Where the required integrations actually run
+
+Both are called at runtime on every investigation, not named in a README and
+wired to nothing. The exact lines, so this is quick to check:
+
+| Requirement | Imported | Called |
+|---|---|---|
+| **ADK agent** | [`agent/agent.py:12-15`](src/walkout/agent/agent.py) — `LlmAgent`, `Gemini`, `MCPToolset`, `StdioConnectionParams` | [`agent/agent.py:39`](src/walkout/agent/agent.py) builds the toolset; [`web/app.py:264`](src/walkout/web/app.py) runs it per request |
+| **Gemini (video)** | [`vision.py:24-25`](src/walkout/vision.py) — `google.genai` | [`vision.py:189`](src/walkout/vision.py) — `client.models.generate_content` over the film at a timecode window |
+| **Gemini (reasoning)** | [`gemini.py:14-15`](src/walkout/gemini.py) | [`gemini.py:35`](src/walkout/gemini.py) — the shared client, retries in one place |
+| **ClickHouse MCP server** | [`mcp_warehouse.py:32`](src/walkout/mcp_warehouse.py) — spawns `mcp-clickhouse` over stdio | [`mcp_warehouse.py:181`](src/walkout/mcp_warehouse.py) — `session.call_tool`; every number the agent reports came back through here |
+
+The agent is additionally handed the MCP server's own `run_query`,
+`list_tables` and `list_databases` tools ([`agent/agent.py:26`](src/walkout/agent/agent.py))
+so it can ask the warehouse questions the fixed tools do not answer. You can
+watch it do this in the console: each tool call appears in the trace as it
+happens.
+
+`make eval-mcp` grades the whole pipeline over that MCP path specifically, so
+"it works through the partner service" is measured rather than asserted.
 
 ## Why it needs both halves
 
@@ -226,6 +260,12 @@ strings concatenated inside Python. Parameters are bound through a typed
 allow-list; the only interpolation is a dimension name, checked against a fixed
 set.
 
+## Demo
+
+[`docs/DEMO-SCRIPT.md`](docs/DEMO-SCRIPT.md) is the script for the submission
+video: what is on screen at each timestamp, the numbers the deployed instance
+currently reports, and what the run costs against the daily quota.
+
 ## Deploy
 
 The image builds both environments and runs the console:
@@ -258,9 +298,17 @@ Built for [Agentic Cinema: The Blockbuster Hackathon](https://agentic-cinema.dev
 - [x] Diagnosis with recoverable watch-hours
 - [x] Web console with streaming agent
 - [x] Container + deploy
+- [x] Documentation page, public API, graceful failure states
 
 On the planted dataset the agent finds all three real cliffs, gets all three
-causes right, and ignores the decoy.
+causes right, and ignores the decoy (`make eval`: ALL PASS).
+
+A full run on the deployed instance takes about 110 seconds and seven tool
+calls. The demo runs on a free-tier Gemini key, which allows 20 requests per
+model per day, so finished investigations are stored in ClickHouse and replayed
+on the next visit: opening the page costs nothing and only the buttons spend
+quota. If the quota does run out, the page says so in those words and everything
+that does not need a model keeps working.
 
 ## License
 
