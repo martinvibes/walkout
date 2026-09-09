@@ -9,6 +9,7 @@
 | **Hackathon** | [Agentic Cinema: The Blockbuster Hackathon](https://agentic-cinema.devpost.com/) |
 | **Partner track** | ClickHouse |
 | **Hosted project** | https://walkout-production-f914.up.railway.app |
+| **Demo video** | https://www.youtube.com/watch?v=FsWmO-KfPDs |
 | **Source** | https://github.com/martinvibes/walkout (public, Apache-2.0) |
 | **Google Cloud at runtime** | Gemini 3.5 Flash + Gemini 3.6 Flash, orchestrated by the Agent Development Kit |
 | **Partner service at runtime** | ClickHouse Cloud, reached through the official `mcp-clickhouse` MCP server |
@@ -262,7 +263,9 @@ set.
 
 ## Demo
 
-[`docs/DEMO-SCRIPT.md`](docs/DEMO-SCRIPT.md) is the script for the submission
+**Watch the demo: https://www.youtube.com/watch?v=FsWmO-KfPDs**
+
+[`docs/DEMO-SCRIPT.md`](docs/DEMO-SCRIPT.md) is the script for that
 video: what is on screen at each timestamp, the numbers the deployed instance
 currently reports, and what the run costs against the daily quota.
 
